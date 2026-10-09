@@ -39,23 +39,27 @@ export type PartInfo = {
   wall: "process" | "storage" | "both" | "engineering";
 };
 
+const HUB = "Each independently managed hub contains an ECR and Fuel Cell.";
+const TRIM = "Stores fluid used to maintain fuel and electrolyte balance.";
+const WATER = "Collects and routes recovered water.";
+
 export const PARTS: Record<PartId, PartInfo> = {
   overview: {
     id: "overview",
     title: "Trinium Energy System",
-    body: "Forty-foot container reference. Four front hubs, shared electrolyte and fuel storage on the back, dual water manifolds, and the AI/EMS cabinet. Geometry is the visual reconstruction in the Blender reference, not a fabrication drawing.",
+    body: "A containerized system that stores fuel, generates electricity, and recovers water.",
     wall: "both",
   },
   shell: {
     id: "shell",
     title: "Container shell",
-    body: "ISO-style 40 ft envelope. Length 12.192 m from the caption. Height 3.80 m keeps the concept aspect. Depth 2.438 m is the standard container width used for this reconstruction.",
+    body: "The enclosure that houses the TES equipment.",
     wall: "both",
   },
   roof: {
     id: "roof",
-    title: "Roof and top rails",
-    body: "Corrugated roof, top side rails, and upper corner castings. Open the roof for a cutaway, or leave it closed.",
+    title: "Roof",
+    body: "Closes the top of the container.",
     wall: "both",
   },
   "hub-1": hub(1),
@@ -64,104 +68,104 @@ export const PARTS: Record<PartId, PartInfo> = {
   "hub-4": hub(4),
   "trim-front": {
     id: "trim-front",
-    title: "Front trim reservoir",
-    body: "Front-bay trim reservoir with lid, inlet, and vent. It sits between hub 4 and the battery cabinet on the process wall.",
+    title: "Trim Reservoir",
+    body: TRIM,
     wall: "process",
   },
   battery: {
     id: "battery",
-    title: "Battery cabinet",
-    body: "Front battery cabinet with seal, louvres, and top vent. Illustrative buffer on the power path between the hubs and the site connection.",
+    title: "Battery Cabinet",
+    body: "Provides reserve power and supports stable system operation.",
     wall: "process",
   },
   ems: {
     id: "ems",
-    title: "AI / EMS cabinet",
-    body: "Energy management cabinet with door, hinges, handle, and the HMI status screen. This is the operator face of the unit.",
+    title: "SI/EMS Cabinet",
+    body: "Monitors and manages TES system operations.",
     wall: "process",
   },
   piping: {
     id: "piping",
-    title: "Process headers",
-    body: "Front headers: safety-orange supply, cobalt return, and a stainless utility line, clamped along the bay.",
+    title: "Process Headers",
+    body: "Distribute fuel, electrolyte, and other process fluids throughout the system.",
     wall: "process",
   },
   "water-front": {
     id: "water-front",
-    title: "Front water manifold",
-    body: "Water outlet manifold on the process face. Six valved branches, flanges, and a flow arrow. Illustrative recoverable-water takeoff.",
+    title: "Water Outlet Manifold",
+    body: WATER,
     wall: "process",
   },
   "water-rear": {
     id: "water-rear",
-    title: "Rear water manifold",
-    body: "Matching water outlet manifold on the storage face, with the same branch and shutoff pattern.",
+    title: "Water Outlet Manifold",
+    body: WATER,
     wall: "storage",
   },
   electrolyte: {
     id: "electrolyte",
-    title: "Electrolyte storage tank",
-    body: "Long upper tank on the storage wall, panel seams, mounting lugs, and port flanges. Holds the carbon-bearing working fluid in this reference.",
+    title: "Electrolyte Storage",
+    body: "Stores electrolyte used to regenerate TES fuel.",
     wall: "storage",
   },
   fuel: {
     id: "fuel",
-    title: "Fuel storage tank",
-    body: "Lower long tank under the electrolyte vessel. Same seam and lug pattern. Fuel path starts here.",
+    title: "Fuel Storage",
+    body: "Stores aqueous fuel for electricity generation.",
     wall: "storage",
   },
   "tank-frame": {
     id: "tank-frame",
-    title: "Tank frame",
-    body: "Uprights and ties that carry the two storage tanks off the floor.",
+    title: "Fuel Storage",
+    body: "Stores aqueous fuel for electricity generation.",
     wall: "storage",
   },
   "trim-rear": {
     id: "trim-rear",
-    title: "Rear trim reservoir",
-    body: "Trim reservoir on the storage side, with lid, inlet, and top vent tied into the rear stainless run.",
+    title: "Trim Reservoir",
+    body: TRIM,
     wall: "storage",
   },
   vessel: {
     id: "vessel",
-    title: "Rear service vessel",
-    body: "Vertical stainless vessel, end caps, lower return, orange supply, blue return, and service risers behind the tanks.",
+    title: "Trinium Energy System",
+    body: "A containerized system that stores fuel, generates electricity, and recovers water.",
     wall: "storage",
   },
   lights: {
     id: "lights",
     title: "Inspection lights",
-    body: "Warm-white housings along both sides of the ceiling. They mark the bay; they are not the thermal-rejection system.",
+    body: "Lights the interior of the container.",
     wall: "both",
   },
   oxygen: {
     id: "oxygen",
     title: "Oxygen support",
-    body: "Engineering view only. Roof-level oxygen support skid. Not in the concept sheet; shown so the support path can be discussed.",
+    body: "Supports the oxygen path for the hubs.",
     wall: "engineering",
   },
   thermal: {
     id: "thermal",
     title: "Thermal rejection",
-    body: "Engineering view only. Roof radiator for heat leaving the hubs. Illustrative, not a sized exchanger.",
+    body: "Rejects heat from the hubs.",
     wall: "engineering",
   },
   anolyte: {
     id: "anolyte",
     title: "Anolyte loop",
-    body: "Engineering view only. Dedicated anolyte vessel and short loop at hub 1. Hidden in the DOE view.",
+    body: "Circulates anolyte at the first hub.",
     wall: "engineering",
   },
   condenser: {
     id: "condenser",
     title: "Water recovery",
-    body: "Engineering view only. Condenser / water-recovery package near the front trim line.",
+    body: "Recovers water from the process.",
     wall: "engineering",
   },
   "carbon-skid": {
     id: "carbon-skid",
     title: "Carbon takeoff",
-    body: "Engineering view only. Small product skid beside the EMS cabinet for the carbon-bearing liquid path.",
+    body: "Handles the carbon-bearing liquid path.",
     wall: "engineering",
   },
 };
@@ -170,7 +174,7 @@ function hub(n: number): PartInfo {
   return {
     id: `hub-${n}` as PartId,
     title: `Hub ${n}`,
-    body: "ECR over a graphite DFFC housing, on a perforated rack with stainless risers, orange supply, and blue return. One of four identical front hubs.",
+    body: HUB,
     wall: "process",
   };
 }
@@ -188,6 +192,7 @@ export const PART_FLOW: Partial<Record<PartId, FlowId>> = {
   fuel: "fuel",
   piping: "fuel",
   "trim-front": "fuel",
+  "trim-rear": "fuel",
   "hub-1": "fuel",
   "hub-2": "fuel",
   "hub-3": "fuel",
@@ -250,7 +255,7 @@ export const FLOWS: { id: FlowId; label: string }[] = [
   { id: "thermal", label: "Thermal" },
 ];
 
-export const UNIT_PARTS: PartId[] = [
+export const SHOWCASE_PARTS: PartId[] = [
   "overview",
   "shell",
   "hub-1",
@@ -264,41 +269,48 @@ export const UNIT_PARTS: PartId[] = [
   "water-front",
   "electrolyte",
   "fuel",
-  "trim-rear",
-  "vessel",
-  "water-rear",
-  "lights",
 ];
 
-export const ENGINEERING_PARTS: PartId[] = ["anolyte", "oxygen", "thermal", "condenser", "carbon-skid"];
+export const UNIT_PARTS: PartId[] = SHOWCASE_PARTS;
+
+export const ENGINEERING_PARTS: PartId[] = [];
+
+export const SELECT_ALIAS: Partial<Record<PartId, PartId>> = {
+  "trim-rear": "trim-front",
+  "water-rear": "water-front",
+  vessel: "overview",
+  "tank-frame": "fuel",
+  lights: "overview",
+  roof: "shell",
+};
 
 export function sceneStats() {
-  return "150–200 kW · 350–400 gal/day · illustrative";
+  return "150\u2013200 kW \u00b7 350\u2013400 gal/day";
 }
 
 export const DOES: Record<PartId, string> = {
-  overview: "One container that makes power, recovers water, and handles a carbon-bearing fluid.",
-  shell: "The enclosure that holds the equipment and keeps the bay weather-tight.",
-  roof: "Closes the top of the bay. Open it when you want to see inside.",
-  "hub-1": "Turns the working fluid into power. Orange supply and blue return feed the stack.",
-  "hub-2": "Turns the working fluid into power. Orange supply and blue return feed the stack.",
-  "hub-3": "Turns the working fluid into power. Orange supply and blue return feed the stack.",
-  "hub-4": "Turns the working fluid into power. Orange supply and blue return feed the stack.",
-  "trim-front": "Holds trim fluid for the front process loop.",
-  battery: "Buffers power between the hubs and the site connection.",
-  ems: "Runs the unit and shows status to the operator.",
-  piping: "Carries supply, return, and utility fluid along the front of the bay.",
-  "water-front": "Takes recoverable water off the process side.",
-  "water-rear": "Takes recoverable water off the storage side.",
-  electrolyte: "Stores the carbon-bearing working fluid.",
-  fuel: "Stores the fuel that feeds the process.",
-  "tank-frame": "Holds the storage tanks up off the floor.",
-  "trim-rear": "Holds trim fluid for the storage-side loop.",
-  vessel: "Service vessel behind the tanks for supply and return.",
-  lights: "Lights the bay so the equipment can be inspected.",
-  oxygen: "Supports the oxygen path on the roof.",
-  thermal: "Rejects heat leaving the hubs.",
-  anolyte: "Circulates anolyte at the first hub.",
-  condenser: "Condenses vapor so water can be recovered.",
-  "carbon-skid": "Takes off the carbon-bearing liquid product.",
+  overview: PARTS.overview.body,
+  shell: PARTS.shell.body,
+  roof: PARTS.roof.body,
+  "hub-1": HUB,
+  "hub-2": HUB,
+  "hub-3": HUB,
+  "hub-4": HUB,
+  "trim-front": TRIM,
+  battery: PARTS.battery.body,
+  ems: PARTS.ems.body,
+  piping: PARTS.piping.body,
+  "water-front": WATER,
+  "water-rear": WATER,
+  electrolyte: PARTS.electrolyte.body,
+  fuel: PARTS.fuel.body,
+  "tank-frame": PARTS.fuel.body,
+  "trim-rear": TRIM,
+  vessel: PARTS.overview.body,
+  lights: PARTS.lights.body,
+  oxygen: PARTS.oxygen.body,
+  thermal: PARTS.thermal.body,
+  anolyte: PARTS.anolyte.body,
+  condenser: PARTS.condenser.body,
+  "carbon-skid": PARTS["carbon-skid"].body,
 };
