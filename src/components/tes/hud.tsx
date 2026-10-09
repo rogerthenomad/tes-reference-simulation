@@ -103,8 +103,8 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
         </a>
         <p className="tagline">Reliable power. Recoverable water. Carbon utilization.</p>
         <a className="site" href="https://www.civistechglobal.com">
-          <span className="site-full">civistechglobal.com</span>
-          <span className="site-short">CIVIS</span>
+          <span className="site-full">CIVIS Tech Global</span>
+          <span className="site-short">CIVIS Tech Global</span>
         </a>
       </header>
 
