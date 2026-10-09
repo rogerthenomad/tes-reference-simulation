@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #071018;
-  --color-surface: #101920;
-  --color-fg: #e7eef4;
-  --color-muted: #8ea0b0;
-  --color-primary: #e85d04;
-  --color-primary-fg: #1a0d04;
-  --color-chip: #1b2834;
-  --color-border: #243240;
-  --font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
-  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --color-bg: #0e2348;
+  --color-surface: #1f4a90;
+  --color-fg: #f3f7fc;
+  --color-muted: #d5e6f6;
+  --color-primary: #00c2b3;
+  --color-primary-fg: #042e2b;
+  --color-chip: #163a78;
+  --color-border: #4a9ad4;
+  --font-sans: "Inter", "Segoe UI", sans-serif;
+  --font-display: "DM Sans", "Segoe UI", sans-serif;
   --radius: 0.5rem;
 }
 
@@ -42,10 +42,19 @@
   background: var(--color-bg);
 }
 
-.studio[data-present="true"] {
-  grid-template-rows: auto minmax(0, 1fr);
+.studio:has(.explode-bar) {
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
 }
 
+.studio[data-present="true"] {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.studio[data-present="true"]:not(:has(.explode-bar)) {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.studio[data-present="true"] .topbar,
 .studio[data-present="true"] .caption,
 .studio[data-present="true"] .dock,
 .studio[data-present="true"] .dossier,
@@ -231,7 +240,11 @@
   overscroll-behavior: contain;
   border-top: 1px solid var(--color-border);
   background: var(--color-surface);
-  padding: 0.45rem 0.65rem calc(0.45rem + env(safe-area-inset-bottom));
+  padding: 0.45rem 0.65rem;
+}
+
+.studio:not(:has(.explode-bar)) .dock {
+  padding-bottom: calc(0.45rem + env(safe-area-inset-bottom));
 }
 
 .chip-row {
@@ -278,23 +291,38 @@
   color: var(--color-primary-fg);
 }
 
-.explode {
-  display: inline-flex;
+.explode-bar {
+  display: flex;
   align-items: center;
-  gap: 0.6rem;
-  height: 2.75rem;
-  flex: 0 0 auto;
-  border-radius: var(--radius);
-  background: var(--color-chip);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 0.35rem 0.85rem calc(0.35rem + env(safe-area-inset-bottom));
+}
+
+.explode {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 2.75rem;
   color: var(--color-fg);
-  padding: 0 0.8rem;
   font-size: 0.85rem;
   font-weight: 600;
 }
 
 .explode input {
-  width: 7rem;
+  flex: 1;
+  min-width: 0;
+  height: 2.75rem;
   accent-color: var(--color-primary);
+}
+
+.explode-pct {
+  flex: 0 0 auto;
+  min-width: 2.5rem;
+  color: var(--color-primary);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
 .dock-extra {

@@ -13,7 +13,7 @@ export const Route = createRootRoute({
         name: "description",
         content: "Interactive 3D simulation of the CIVIS Tech Global Trinium Energy System.",
       },
-      { name: "theme-color", content: "#071018" },
+      { name: "theme-color", content: "#1f4a90" },
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
@@ -22,7 +22,7 @@ export const Route = createRootRoute({
       { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Inter:wght@400;500;600&display=swap",
       },
     ],
   }),

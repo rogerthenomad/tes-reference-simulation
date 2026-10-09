@@ -154,7 +154,7 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
             {children}
             {present ? (
               <button type="button" className="present-exit" onClick={() => setPresent(false)}>
-                Exit present
+                Show menus
               </button>
             ) : null}
           </div>
@@ -238,8 +238,8 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
             <SlidersHorizontal aria-hidden="true" />
             {more ? "Less" : "Controls"}
           </button>
-          <button type="button" className="chip present-chip" onClick={() => setPresent(!present)}>
-            Present
+          <button type="button" aria-pressed={present} className={present ? "chip on" : "chip"} onClick={() => setPresent(!present)}>
+            {present ? "Show menus" : "Hide menus"}
           </button>
         </div>
         <div className="dock-extra">
@@ -274,26 +274,29 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
             ))}
           </div>
           <div className="chip-row">
-            {scene !== "facility" ? (
-              <label className="explode">
-                Explode
-                <input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  value={explode}
-                  aria-valuetext={`${Math.round(explode * 100)} percent`}
-                  onChange={(event) => setExplode(Number(event.target.value))}
-                />
-              </label>
-            ) : null}
             <button type="button" aria-pressed={audience === "engineering"} className={audience === "engineering" ? "chip on" : "chip"} onClick={() => setAudience(audience === "engineering" ? "doe" : "engineering")}>
               {audience === "engineering" ? "Engineering" : "DOE view"}
             </button>
           </div>
         </div>
       </footer>
+      {scene !== "facility" ? (
+        <div className="explode-bar">
+          <label className="explode">
+            Explode
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={explode}
+              aria-valuetext={`${Math.round(explode * 100)} percent`}
+              onChange={(event) => setExplode(Number(event.target.value))}
+            />
+            <span className="explode-pct">{Math.round(explode * 100)}%</span>
+          </label>
+        </div>
+      ) : null}
     </div>
   );
 }
