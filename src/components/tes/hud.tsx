@@ -1,18 +1,15 @@
-import { useNavigate } from "@tanstack/react-router";
-import { Pause, Play, RotateCcw, RotateCw, SlidersHorizontal, Volume2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Pause, Play, SlidersHorizontal, Volume2, X } from "lucide-react";
+import { useEffect, useState, type PointerEvent } from "react";
 import type { StageHandle } from "@/components/tes/stage";
 import {
   ENGINEERING_PARTS,
   FLOWS,
   PARTS,
-  SCENES,
   UNIT_PARTS,
   VIEWS,
   sceneStats,
   type FlowId,
   type PartId,
-  type SceneId,
 } from "@/lib/tes/content";
 import { useTes } from "@/lib/tes/store";
 
@@ -29,8 +26,6 @@ const WALLS = [
 ] as const;
 
 export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHandle | null>; children: React.ReactNode }) {
-  const navigate = useNavigate();
-  const scene = useTes((s) => s.scene);
   const view = useTes((s) => s.view);
   const shell = useTes((s) => s.shell);
   const isolate = useTes((s) => s.isolate);
@@ -42,7 +37,6 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
   const selected = useTes((s) => s.selected);
   const present = useTes((s) => s.present);
   const panel = useTes((s) => s.panel);
-  const setScene = useTes((s) => s.setScene);
   const setView = useTes((s) => s.setView);
   const setShell = useTes((s) => s.setShell);
   const setIsolate = useTes((s) => s.setIsolate);
@@ -68,51 +62,20 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
     let raf = 0;
     const loop = (now: number) => {
       const t = now / 1000;
-      setPower(168 + Math.sin(t * 0.7) * 14 + (scene === "facility" ? 3600 : 0));
-      setWater(352 + Math.sin(t * 0.45 + 1) * 22 + (scene === "facility" ? 2400 : 0));
+      setPower(168 + Math.sin(t * 0.7) * 14);
+      setWater(352 + Math.sin(t * 0.45 + 1) * 22);
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [running, scene]);
-
-  useEffect(() => {
-    if (scene !== "teardown") return;
-    let raf = 0;
-    let last = performance.now();
-    const step = (now: number) => {
-      const dt = Math.min(0.05, (now - last) / 1000);
-      last = now;
-      const next = useTes.getState().explode + dt * 0.18;
-      if (next >= 1) {
-        useTes.getState().setExplode(1);
-        return;
-      }
-      useTes.getState().setExplode(next);
-      raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [scene]);
+  }, [running]);
 
   useEffect(() => {
     return () => window.speechSynthesis?.cancel();
   }, []);
 
   const part = PARTS[selected] ?? PARTS.overview;
-  const list = scene === "facility"
-    ? (["overview", "bank", "water-zone", "power-zone", "control-room"] as PartId[])
-    : scene === "teardown"
-      ? (["stack", "hub-1"] as PartId[])
-      : audience === "engineering"
-        ? [...UNIT_PARTS, ...ENGINEERING_PARTS]
-        : UNIT_PARTS;
-
-  const goScene = (id: SceneId) => {
-    const dest = SCENES.find((item) => item.id === id);
-    setScene(id);
-    if (dest) navigate({ to: dest.to });
-  };
+  const list = audience === "engineering" ? [...UNIT_PARTS, ...ENGINEERING_PARTS] : UNIT_PARTS;
 
   const listen = () => {
     if (!window.speechSynthesis) return;
@@ -152,6 +115,7 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
         <div className="viewport-col">
           <div className="viewport">
             {children}
+            <DirPad onNudge={(dir) => stageRef.current?.nudge(dir)} />
             {present ? (
               <button type="button" className="present-exit" onClick={() => setPresent(false)}>
                 Show menus
@@ -166,7 +130,7 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
             onClick={() => setPanel(!panel)}
           >
             <strong>{part.title}</strong>
-            <span className="stats">{sceneStats(scene)}</span>
+            <span className="stats">{sceneStats()}</span>
             <span className="live">{running ? `${Math.round(power)} kW` : "Standby"}</span>
             <span className="live">{running ? `${Math.round(water)} gal/day` : "Idle"}</span>
           </button>
@@ -203,25 +167,12 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
       </div>
 
       <footer className="dock">
-        <div className="chip-row" role="tablist" aria-label="Scene">
-          {SCENES.map((item) => (
-            <button key={item.id} type="button" aria-pressed={scene === item.id} className={scene === item.id ? "chip on" : "chip"} onClick={() => goScene(item.id)}>
-              {item.label}
-            </button>
-          ))}
-        </div>
         <div className="chip-row" aria-label="Camera">
-          {VIEWS[scene].map((item) => (
+          {VIEWS.map((item) => (
             <button key={item.id} type="button" aria-pressed={view === item.id} className={view === item.id ? "chip on" : "chip"} onClick={() => setView(item.id)}>
               {item.label}
             </button>
           ))}
-          <button type="button" className="chip" onClick={() => stageRef.current?.yaw(-1)}>
-            <RotateCcw aria-hidden="true" /> Left
-          </button>
-          <button type="button" className="chip" onClick={() => stageRef.current?.yaw(1)}>
-            <RotateCw aria-hidden="true" /> Right
-          </button>
           <button type="button" aria-pressed={spin} className={spin ? "chip on" : "chip"} onClick={() => setSpin(!spin)}>
             Spin
           </button>
@@ -243,8 +194,7 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
           </button>
         </div>
         <div className="dock-extra">
-          {scene === "unit" ? (
-            <div className="chip-row" aria-label="Shell">
+          <div className="chip-row" aria-label="Shell">
               {SHELLS.map((item) => (
                 <button key={item.id} type="button" aria-pressed={shell === item.id} className={shell === item.id ? "chip on" : "chip"} onClick={() => setShell(item.id)}>
                   {item.label}
@@ -256,7 +206,6 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
                 </button>
               ))}
             </div>
-          ) : null}
           <div className="chip-row" aria-label="Flow">
             {FLOWS.map((item) => (
               <button
@@ -280,8 +229,7 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
           </div>
         </div>
       </footer>
-      {scene !== "facility" ? (
-        <div className="explode-bar">
+      <div className="explode-bar">
           <label className="explode">
             Explode
             <input
@@ -296,7 +244,37 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
             <span className="explode-pct">{Math.round(explode * 100)}%</span>
           </label>
         </div>
-      ) : null}
+    </div>
+  );
+}
+
+function DirPad({ onNudge }: { onNudge: (dir: "left" | "right" | "up" | "down") => void }) {
+  const hold = (dir: "left" | "right" | "up" | "down") => (event: PointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    onNudge(dir);
+    const timer = window.setInterval(() => onNudge(dir), 120);
+    const stop = () => {
+      window.clearInterval(timer);
+      window.removeEventListener("pointerup", stop);
+      window.removeEventListener("pointercancel", stop);
+    };
+    window.addEventListener("pointerup", stop);
+    window.addEventListener("pointercancel", stop);
+  };
+  return (
+    <div className="pad" role="group" aria-label="Look around">
+      <button type="button" className="pad-btn up" aria-label="Look up" onPointerDown={hold("up")}>
+        <ChevronUp aria-hidden="true" />
+      </button>
+      <button type="button" className="pad-btn left" aria-label="Look left" onPointerDown={hold("left")}>
+        <ChevronLeft aria-hidden="true" />
+      </button>
+      <button type="button" className="pad-btn right" aria-label="Look right" onPointerDown={hold("right")}>
+        <ChevronRight aria-hidden="true" />
+      </button>
+      <button type="button" className="pad-btn down" aria-label="Look down" onPointerDown={hold("down")}>
+        <ChevronDown aria-hidden="true" />
+      </button>
     </div>
   );
 }

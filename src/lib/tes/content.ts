@@ -1,4 +1,4 @@
-export type SceneId = "unit" | "facility" | "teardown";
+export type SceneId = "unit";
 export type ViewId = "front" | "back" | "iso" | "top" | "end" | "utility";
 export type ShellMode = "open" | "closed" | "xray";
 export type Isolate = "all" | "process" | "storage";
@@ -30,18 +30,13 @@ export type PartId =
   | "thermal"
   | "anolyte"
   | "condenser"
-  | "carbon-skid"
-  | "stack"
-  | "bank"
-  | "water-zone"
-  | "power-zone"
-  | "control-room";
+  | "carbon-skid";
 
 export type PartInfo = {
   id: PartId;
   title: string;
   body: string;
-  wall: "process" | "storage" | "both" | "engineering" | "facility";
+  wall: "process" | "storage" | "both" | "engineering";
 };
 
 export const PARTS: Record<PartId, PartInfo> = {
@@ -169,36 +164,6 @@ export const PARTS: Record<PartId, PartInfo> = {
     body: "Engineering view only. Small product skid beside the EMS cabinet for the carbon-bearing liquid path.",
     wall: "engineering",
   },
-  stack: {
-    id: "stack",
-    title: "Representative stack",
-    body: "Break-apart of hub 1 plus an illustrative plate stack: end plates, fields, membrane, and the control board. Internal plate count is not taken from the Blender shell.",
-    wall: "process",
-  },
-  bank: {
-    id: "bank",
-    title: "Hub bank",
-    body: "One bank of ten hub bays. Eight banks is the illustrative 4 MW yard. Each bay stands in for the four-hub container block.",
-    wall: "facility",
-  },
-  "water-zone": {
-    id: "water-zone",
-    title: "Water zone",
-    body: "Shared water handling at the end of the yard: tanks, manifold rack, and a truck apron.",
-    wall: "facility",
-  },
-  "power-zone": {
-    id: "power-zone",
-    title: "Power zone",
-    body: "Switchgear and transformer pad where the banks land on the site electrical connection.",
-    wall: "facility",
-  },
-  "control-room": {
-    id: "control-room",
-    title: "Operations",
-    body: "Operations room for the EMS fleet view. Illustrative building, not an architectural drawing.",
-    wall: "facility",
-  },
 };
 
 function hub(n: number): PartInfo {
@@ -246,33 +211,14 @@ export const STORAGE_PARTS = new Set<string>([
   "water-rear",
 ]);
 
-export const SCENES: { id: SceneId; label: string; title: string; to: "/" | "/facility" | "/teardown" }[] = [
-  { id: "unit", label: "Unit", title: "40-foot TES", to: "/" },
-  { id: "facility", label: "Facility", title: "Eight-bank yard", to: "/facility" },
-  { id: "teardown", label: "Teardown", title: "Hub break-apart", to: "/teardown" },
+export const VIEWS: { id: ViewId; label: string }[] = [
+  { id: "front", label: "Front" },
+  { id: "back", label: "Back" },
+  { id: "iso", label: "Full" },
+  { id: "top", label: "Top" },
+  { id: "end", label: "End" },
+  { id: "utility", label: "Utility" },
 ];
-
-export const VIEWS: Record<SceneId, { id: ViewId; label: string }[]> = {
-  unit: [
-    { id: "front", label: "Front" },
-    { id: "back", label: "Back" },
-    { id: "iso", label: "Full" },
-    { id: "top", label: "Top" },
-    { id: "end", label: "End" },
-    { id: "utility", label: "Utility" },
-  ],
-  facility: [
-    { id: "iso", label: "Yard" },
-    { id: "front", label: "Facade" },
-    { id: "top", label: "Top" },
-    { id: "end", label: "End" },
-  ],
-  teardown: [
-    { id: "front", label: "Front" },
-    { id: "iso", label: "Three-quarter" },
-    { id: "top", label: "Top" },
-  ],
-};
 
 export const FLOWS: { id: FlowId; label: string }[] = [
   { id: "off", label: "Model" },
@@ -306,8 +252,6 @@ export const UNIT_PARTS: PartId[] = [
 
 export const ENGINEERING_PARTS: PartId[] = ["anolyte", "oxygen", "thermal", "condenser", "carbon-skid"];
 
-export function sceneStats(scene: SceneId) {
-  if (scene === "facility") return "Eight banks · ten hubs each · illustrative 4 MW";
-  if (scene === "teardown") return "Hub 1 · ECR and DFFC · representative plates";
+export function sceneStats() {
   return "150–200 kW · 350–400 gal/day · illustrative";
 }
