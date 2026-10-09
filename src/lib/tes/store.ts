@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { Audience, FlowId, Isolate, PartId, Quality, SceneId, ShellMode, ViewId } from "@/lib/tes/content";
+import { PART_FLOW } from "@/lib/tes/content";
 
 type TesState = {
   scene: SceneId;
@@ -66,7 +67,17 @@ export const useTes = create<TesState>((set) => ({
   setExplode: (explode) => set({ explode }),
   setSpin: (spin) => set({ spin }),
   setRunning: (running) => set({ running }),
-  setSelected: (selected) => set({ selected }),
+  setSelected: (selected) =>
+    set((s) => {
+      const flow = PART_FLOW[selected];
+      const engineering = selected === "oxygen" || selected === "thermal" || selected === "anolyte" || selected === "condenser" || selected === "carbon-skid";
+      return {
+        selected,
+        panel: selected === "overview" ? s.panel : true,
+        flow: flow ?? (selected === "overview" ? "off" : s.flow),
+        audience: engineering ? "engineering" : s.audience,
+      };
+    }),
   setPresent: (present) => set({ present }),
   setPanel: (panel) => set({ panel }),
   setCallouts: (callouts) => set({ callouts }),

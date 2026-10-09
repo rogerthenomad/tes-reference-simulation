@@ -222,7 +222,8 @@
 .caption {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.75rem;
   width: 100%;
   min-width: 0;
   min-height: 2.75rem;
@@ -258,8 +259,14 @@
   white-space: nowrap;
 }
 
-.caption .stats {
-  flex: 1;
+.caption .does {
+  flex: 1 1 12rem;
+  min-width: 8rem;
+  color: var(--color-fg);
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: normal;
 }
 
 .caption .live {
@@ -513,12 +520,30 @@
   height: 1rem;
 }
 
+.note-pin {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.note-pin .does {
+  margin: 0;
+  color: var(--color-fg);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
 .parts {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 0.35rem;
+  min-height: 0;
   margin: 0;
   padding: 0;
+  overflow: auto;
   list-style: none;
 }
 
@@ -560,8 +585,7 @@
 @media (max-width: 959px) {
   .tagline,
   .brand em,
-  .site-full,
-  .caption .stats {
+  .site-full {
     display: none;
   }
 
@@ -570,15 +594,15 @@
   }
 
   .studio[data-panel="true"] .stage-wrap {
-    grid-template-rows: minmax(10rem, 1fr) minmax(9.5rem, 36%);
+    grid-template-rows: minmax(8rem, 1fr) minmax(14rem, 46%);
   }
 
   .studio[data-panel="true"] .dossier {
     display: flex;
     flex-direction: column;
     gap: 0.65rem;
-    min-height: 9.5rem;
-    overflow: auto;
+    min-height: 0;
+    overflow: hidden;
     overscroll-behavior: contain;
     border-top: 1px solid var(--color-border);
     background: var(--color-surface);
@@ -628,7 +652,7 @@
     flex-direction: column;
     gap: 0.75rem;
     min-height: 0;
-    overflow: auto;
+    overflow: hidden;
     border-left: 1px solid var(--color-border);
     background: var(--color-surface);
     padding: 1.15rem 1rem 1.25rem;

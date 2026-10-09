@@ -456,6 +456,32 @@ function oneBox(box: number[]) {
 }
 
 const ORANGE = new THREE.Color("#e85d04");
+const FLOW_COLORS: Record<string, THREE.Color> = {
+  power: new THREE.Color("#7ec8ff"),
+  water: new THREE.Color("#3ec6ff"),
+  fuel: new THREE.Color("#ff8a1e"),
+  carbon: new THREE.Color("#d6f25a"),
+  oxygen: new THREE.Color("#e8fbff"),
+  thermal: new THREE.Color("#ffb45a"),
+};
+
+let flowTex: THREE.CanvasTexture | null = null;
+function flowTexture() {
+  if (flowTex) return flowTex;
+  const canvas = document.createElement("canvas");
+  canvas.width = 32;
+  canvas.height = 128;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, 32, 128);
+  ctx.fillStyle = "#1a1a1a";
+  for (let y = 0; y < 128; y += 28) ctx.fillRect(0, y, 32, 10);
+  flowTex = new THREE.CanvasTexture(canvas);
+  flowTex.wrapS = flowTex.wrapT = THREE.RepeatWrapping;
+  flowTex.colorSpace = THREE.NoColorSpace;
+  return flowTex;
+}
 
 export function applyPresentation(root: THREE.Object3D, state: Presentation) {
   const e = state.explode;
@@ -497,11 +523,29 @@ export function applyPresentation(root: THREE.Object3D, state: Presentation) {
     mat.opacity = xrayShell ? 0.16 : state.flow !== "off" && !flowHit ? 0.14 : 1;
     mat.depthWrite = mat.opacity > 0.5;
     const selected = state.selected !== "overview" && state.selected === part;
-    const pulse = flowHit ? 0.45 + Math.sin(state.pulse * 3.2) * 0.35 : 0;
-    const baseColor = mat.userData.baseEmissiveColor as THREE.Color | undefined;
-    if (selected) mat.emissive.copy(ORANGE);
-    else if (baseColor) mat.emissive.copy(baseColor);
-    mat.emissiveIntensity = (mat.userData.baseEmissive || 0) + (selected ? 0.65 : 0) + pulse;
+    if (!mat.userData.baseColor) mat.userData.baseColor = mat.color.clone();
+    const tex = flowTexture();
+    if (tex) tex.offset.y = -state.pulse * 0.55;
+    if (flowHit) {
+      const color = FLOW_COLORS[state.flow] || ORANGE;
+      const wave = 0.45 + 0.55 * Math.sin(state.pulse * 5 - mesh.position.x * 0.7 - mesh.position.z * 0.4);
+      mat.color.copy(mat.userData.baseColor as THREE.Color).lerp(color, 0.62);
+      mat.emissive.copy(color);
+      mat.emissiveIntensity = 0.7 + wave * 1.2;
+      if (tex && mat.emissiveMap !== tex) {
+        mat.emissiveMap = tex;
+        mat.needsUpdate = true;
+      }
+    } else {
+      mat.color.copy(mat.userData.baseColor as THREE.Color);
+      if (mat.emissiveMap && mat.emissiveMap === tex) {
+        mat.emissiveMap = null;
+        mat.needsUpdate = true;
+      }
+      if (selected) mat.emissive.copy(ORANGE);
+      else if (mat.userData.baseEmissiveColor) mat.emissive.copy(mat.userData.baseEmissiveColor as THREE.Color);
+      mat.emissiveIntensity = (mat.userData.baseEmissive || 0) + (selected ? 0.65 : 0);
+    }
   });
 }
 

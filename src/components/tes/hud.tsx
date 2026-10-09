@@ -138,27 +138,30 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
             onClick={() => setPanel(!panel)}
           >
             <strong>{part.title}</strong>
-            <span className="stats">{sceneStats()}</span>
+            <span className="does">{selected === "overview" ? sceneStats() : DOES[selected]}</span>
             <span className="live">{running ? `${Math.round(power)} kW` : "Standby"}</span>
             <span className="live">{running ? `${Math.round(water)} gal/day` : "Idle"}</span>
           </button>
         </div>
 
         <aside className="dossier" id="dossier">
-          <div className="dossier-head">
-            <div>
-              <p className="kicker">CIVIS Tech Global</p>
-              <h1>{part.title}</h1>
+          <div className="note-pin">
+            <div className="dossier-head">
+              <div>
+                <p className="kicker">CIVIS Tech Global</p>
+                <h1>{part.title}</h1>
+              </div>
+              <button type="button" className="icon-btn" aria-label="Close notes" onClick={() => setPanel(false)}>
+                <X aria-hidden="true" />
+              </button>
             </div>
-            <button type="button" className="icon-btn" aria-label="Close notes" onClick={() => setPanel(false)}>
-              <X aria-hidden="true" />
+            <p className="does">{DOES[selected]}</p>
+            <p>{part.body}</p>
+            <button type="button" className="listen" onClick={listen}>
+              <Volume2 aria-hidden="true" />
+              {speech === "playing" ? "Speaking" : "Listen"}
             </button>
           </div>
-          <p>{part.body}</p>
-          <button type="button" className="listen" onClick={listen}>
-            <Volume2 aria-hidden="true" />
-            {speech === "playing" ? "Speaking" : "Listen"}
-          </button>
           <ul className="parts">
             {list.map((id) => (
               <li key={id}>

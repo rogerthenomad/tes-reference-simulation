@@ -176,12 +176,32 @@ function hub(n: number): PartInfo {
 }
 
 export const FLOW_PARTS: Record<Exclude<FlowId, "off">, PartId[]> = {
-  power: ["battery", "ems", "lights"],
-  water: ["water-front", "water-rear", "condenser"],
-  fuel: ["fuel"],
-  carbon: ["electrolyte", "carbon-skid"],
-  oxygen: ["oxygen"],
+  power: ["battery", "ems", "lights", "hub-1", "hub-2", "hub-3", "hub-4"],
+  water: ["water-front", "water-rear", "condenser", "piping"],
+  fuel: ["fuel", "piping", "hub-1", "hub-2", "hub-3", "hub-4", "trim-front"],
+  carbon: ["electrolyte", "carbon-skid", "piping"],
+  oxygen: ["oxygen", "hub-1", "hub-2", "hub-3", "hub-4"],
   thermal: ["thermal", "lights", "condenser"],
+};
+
+export const PART_FLOW: Partial<Record<PartId, FlowId>> = {
+  fuel: "fuel",
+  piping: "fuel",
+  "trim-front": "fuel",
+  "hub-1": "fuel",
+  "hub-2": "fuel",
+  "hub-3": "fuel",
+  "hub-4": "fuel",
+  "water-front": "water",
+  "water-rear": "water",
+  condenser: "water",
+  electrolyte: "carbon",
+  "carbon-skid": "carbon",
+  oxygen: "oxygen",
+  thermal: "thermal",
+  battery: "power",
+  ems: "power",
+  lights: "power",
 };
 
 export const PROCESS_PARTS = new Set<string>([
