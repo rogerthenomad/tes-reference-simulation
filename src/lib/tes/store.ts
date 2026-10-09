@@ -46,7 +46,7 @@ export const useTes = create<TesState>((set) => ({
   running: false,
   selected: "overview",
   present: false,
-  panel: true,
+  panel: false,
   callouts: true,
   quality: "high",
   shot: 0,

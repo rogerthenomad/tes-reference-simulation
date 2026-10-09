@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Pause, Play, RotateCcw, RotateCw, Volume2 } from "lucide-react";
+import { Pause, Play, RotateCcw, RotateCw, SlidersHorizontal, Volume2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { StageHandle } from "@/components/tes/stage";
 import {
@@ -55,11 +55,12 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
   const setPresent = useTes((s) => s.setPresent);
   const setPanel = useTes((s) => s.setPanel);
   const [speech, setSpeech] = useState<"idle" | "playing">("idle");
+  const [more, setMore] = useState(false);
   const [power, setPower] = useState(176);
   const [water, setWater] = useState(368);
 
   useEffect(() => {
-    if (window.matchMedia("(max-width: 800px)").matches) setPanel(false);
+    if (window.matchMedia("(min-width: 960px)").matches) setPanel(true);
   }, [setPanel]);
 
   useEffect(() => {
@@ -126,7 +127,12 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
   };
 
   return (
-    <div className="studio" data-present={present ? "true" : "false"} data-panel={panel ? "true" : "false"}>
+    <div
+      className="studio"
+      data-present={present ? "true" : "false"}
+      data-panel={panel ? "true" : "false"}
+      data-more={more ? "true" : "false"}
+    >
       <header className="topbar">
         <a className="brand" href="https://www.civistechglobal.com" target="_blank" rel="noreferrer">
           <img src="/brand/civis-mark.svg" alt="" className="mark" />
@@ -137,37 +143,106 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
         </a>
         <p className="tagline">Reliable power. Recoverable water. Carbon utilization.</p>
         <a className="site" href="https://www.civistechglobal.com">
-          civistechglobal.com
+          <span className="site-full">civistechglobal.com</span>
+          <span className="site-short">CIVIS</span>
         </a>
       </header>
 
       <div className="stage-wrap">
-        <div className="viewport">
-          {children}
-        <div className="toolbar">
-          <div className="chip-row" role="tablist" aria-label="Scene">
-            {SCENES.map((item) => (
-              <button key={item.id} type="button" aria-pressed={scene === item.id} className={scene === item.id ? "chip on" : "chip"} onClick={() => goScene(item.id)}>
-                {item.label}
+        <div className="viewport-col">
+          <div className="viewport">
+            {children}
+            {present ? (
+              <button type="button" className="present-exit" onClick={() => setPresent(false)}>
+                Exit present
               </button>
-            ))}
+            ) : null}
           </div>
-          <div className="chip-row" aria-label="Camera">
-            {VIEWS[scene].map((item) => (
-              <button key={item.id} type="button" aria-pressed={view === item.id} className={view === item.id ? "chip on" : "chip"} onClick={() => setView(item.id)}>
-                {item.label}
-              </button>
-            ))}
-            <button type="button" className="chip" onClick={() => stageRef.current?.yaw(-1)}>
-              <RotateCcw aria-hidden="true" /> Left
-            </button>
-            <button type="button" className="chip" onClick={() => stageRef.current?.yaw(1)}>
-              <RotateCw aria-hidden="true" /> Right
-            </button>
-            <button type="button" aria-pressed={spin} className={spin ? "chip on" : "chip"} onClick={() => setSpin(!spin)}>
-              Spin
+          <button
+            type="button"
+            className="caption"
+            aria-expanded={panel}
+            aria-controls="dossier"
+            onClick={() => setPanel(!panel)}
+          >
+            <strong>{part.title}</strong>
+            <span className="stats">{sceneStats(scene)}</span>
+            <span className="live">{running ? `${Math.round(power)} kW` : "Standby"}</span>
+            <span className="live">{running ? `${Math.round(water)} gal/day` : "Idle"}</span>
+          </button>
+        </div>
+
+        <aside className="dossier" id="dossier">
+          <div className="dossier-head">
+            <div>
+              <p className="kicker">CIVIS Tech Global</p>
+              <h1>{part.title}</h1>
+            </div>
+            <button type="button" className="icon-btn" aria-label="Close notes" onClick={() => setPanel(false)}>
+              <X aria-hidden="true" />
             </button>
           </div>
+          <p>{part.body}</p>
+          <button type="button" className="listen" onClick={listen}>
+            <Volume2 aria-hidden="true" />
+            {speech === "playing" ? "Speaking" : "Listen"}
+          </button>
+          <ul className="parts">
+            {list.map((id) => (
+              <li key={id}>
+                <button type="button" aria-pressed={selected === id} className={selected === id ? "part on" : "part"} onClick={() => setSelected(id)}>
+                  {PARTS[id].title}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p className="fine">
+            Visual reconstruction of the reference Blender model. Not a fabrication drawing, P&ID, or release of controlled dimensions.
+          </p>
+        </aside>
+      </div>
+
+      <footer className="dock">
+        <div className="chip-row" role="tablist" aria-label="Scene">
+          {SCENES.map((item) => (
+            <button key={item.id} type="button" aria-pressed={scene === item.id} className={scene === item.id ? "chip on" : "chip"} onClick={() => goScene(item.id)}>
+              {item.label}
+            </button>
+          ))}
+        </div>
+        <div className="chip-row" aria-label="Camera">
+          {VIEWS[scene].map((item) => (
+            <button key={item.id} type="button" aria-pressed={view === item.id} className={view === item.id ? "chip on" : "chip"} onClick={() => setView(item.id)}>
+              {item.label}
+            </button>
+          ))}
+          <button type="button" className="chip" onClick={() => stageRef.current?.yaw(-1)}>
+            <RotateCcw aria-hidden="true" /> Left
+          </button>
+          <button type="button" className="chip" onClick={() => stageRef.current?.yaw(1)}>
+            <RotateCw aria-hidden="true" /> Right
+          </button>
+          <button type="button" aria-pressed={spin} className={spin ? "chip on" : "chip"} onClick={() => setSpin(!spin)}>
+            Spin
+          </button>
+        </div>
+        <div className="chip-row">
+          <button type="button" aria-pressed={running} className={running ? "chip on" : "chip"} onClick={() => setRunning(!running)}>
+            {running ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
+            {running ? "Running" : "Run"}
+          </button>
+          <button type="button" aria-pressed={panel} className={panel ? "chip on" : "chip"} onClick={() => setPanel(!panel)}>
+            Notes
+          </button>
+          <button type="button" aria-pressed={more} className={`chip more-toggle ${more ? "on" : ""}`} onClick={() => setMore(!more)}>
+            <SlidersHorizontal aria-hidden="true" />
+            {more ? "Less" : "Controls"}
+          </button>
+          <button type="button" className="chip present-chip" onClick={() => setPresent(!present)}>
+            Present
+          </button>
+        </div>
+        <div className="dock-extra">
           {scene === "unit" ? (
             <div className="chip-row" aria-label="Shell">
               {SHELLS.map((item) => (
@@ -216,47 +291,9 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
             <button type="button" aria-pressed={audience === "engineering"} className={audience === "engineering" ? "chip on" : "chip"} onClick={() => setAudience(audience === "engineering" ? "doe" : "engineering")}>
               {audience === "engineering" ? "Engineering" : "DOE view"}
             </button>
-            <button type="button" aria-pressed={running} className={running ? "chip on" : "chip"} onClick={() => setRunning(!running)}>
-              {running ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
-              {running ? "Running" : "Run"}
-            </button>
-            <button type="button" className="chip" onClick={() => setPresent(!present)}>
-              {present ? "Exit present" : "Present"}
-            </button>
-            <button type="button" className="chip" onClick={() => setPanel(!panel)}>
-              {panel ? "Hide notes" : "Notes"}
-            </button>
           </div>
         </div>
-        <div className="readout" aria-live="polite">
-          <span>{sceneStats(scene)}</span>
-          <span>{running ? `${Math.round(power)} kW` : "Standby"}</span>
-          <span>{running ? `${Math.round(water)} gal/day` : "Flows idle"}</span>
-        </div>
-      </div>
-
-      <aside className="dossier">
-        <p className="kicker">CIVIS Tech Global</p>
-        <h1>{part.title}</h1>
-        <p>{part.body}</p>
-        <button type="button" className="listen" onClick={listen}>
-          <Volume2 aria-hidden="true" />
-          {speech === "playing" ? "Speaking" : "Listen"}
-        </button>
-        <ul className="parts">
-          {list.map((id) => (
-            <li key={id}>
-              <button type="button" aria-pressed={selected === id} className={selected === id ? "part on" : "part"} onClick={() => setSelected(id)}>
-                {PARTS[id].title}
-              </button>
-            </li>
-          ))}
-        </ul>
-        <p className="fine">
-          Visual reconstruction of the reference Blender model. Not a fabrication drawing, P&ID, or release of controlled dimensions.
-        </p>
-      </aside>
-      </div>
+      </footer>
     </div>
   );
 }
