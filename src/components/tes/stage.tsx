@@ -108,8 +108,16 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
   const [ready, setReady] = useState(false);
   const flying = useRef(true);
   const desired = useRef<Shot>(UNIT_SHOTS.iso);
-  const controls = useThree((s) => s.controls) as { target: THREE.Vector3; update: () => void; autoRotate: boolean } | null;
+  const controls = useThree((s) => s.controls) as {
+    target: THREE.Vector3;
+    update: () => void;
+    autoRotate: boolean;
+    screenSpacePanning: boolean;
+    mouseButtons: { LEFT: number };
+    touches: { ONE: number };
+  } | null;
   const camera = useThree((s) => s.camera);
+  const gl = useThree((s) => s.gl);
 
   useEffect(() => {
     let dead = false;
@@ -135,23 +143,43 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
     desired.current = pickShot(view, selected);
   }, [view, selected, shotN]);
 
+  useEffect(() => {
+    const el = gl.domElement;
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    const onDown = (event: PointerEvent) => {
+      if (!controls) return;
+      flying.current = false;
+      const rect = el.getBoundingClientRect();
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      const hits = models.current ? raycaster.intersectObject(models.current, true) : [];
+      const onModel = hits.length > 0;
+      controls.screenSpacePanning = true;
+      controls.mouseButtons.LEFT = onModel ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN;
+      controls.touches.ONE = onModel ? THREE.TOUCH.ROTATE : THREE.TOUCH.PAN;
+    };
+    el.addEventListener("pointerdown", onDown, true);
+    return () => el.removeEventListener("pointerdown", onDown, true);
+  }, [camera, controls, gl]);
+
   useImperativeHandle(stageRef, () => ({
     nudge(dir) {
-      const origin = controls?.target?.clone() || new THREE.Vector3(0, 1.6, 0);
-      const offset = camera.position.clone().sub(origin);
-      if (dir === "left" || dir === "right") {
-        offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), (dir === "left" ? -1 : 1) * (Math.PI / 14));
-      } else {
-        const axis = new THREE.Vector3().crossVectors(offset, new THREE.Vector3(0, 1, 0));
-        if (axis.lengthSq() < 1e-6) return;
-        axis.normalize();
-        const next = offset.clone().applyAxisAngle(axis, (dir === "up" ? 1 : -1) * (Math.PI / 18));
-        const elev = Math.asin(THREE.MathUtils.clamp(next.y / next.length(), -1, 1));
-        if (elev < 0.12 || elev > 1.25) return;
-        offset.copy(next);
-      }
-      desired.current = { pos: origin.clone().add(offset), target: origin };
-      flying.current = true;
+      if (!controls) return;
+      flying.current = false;
+      const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+      const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
+      const step = Math.max(0.45, camera.position.distanceTo(controls.target) * 0.08);
+      const pan = new THREE.Vector3();
+      if (dir === "left") pan.addScaledVector(right, step);
+      if (dir === "right") pan.addScaledVector(right, -step);
+      if (dir === "up") pan.addScaledVector(up, -step);
+      if (dir === "down") pan.addScaledVector(up, step);
+      camera.position.add(pan);
+      controls.target.add(pan);
+      controls.update();
+      desired.current = { pos: camera.position.clone(), target: controls.target.clone() };
       useTes.getState().setSpin(false);
     },
   }), [camera, controls, stageRef]);
@@ -203,7 +231,7 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
       {quality === "high" ? (
         <ContactShadows position={[0, 0, 0]} opacity={0.35} scale={30} blur={2.4} far={8} />
       ) : null}
-      <OrbitControls makeDefault enableDamping dampingFactor={0.08} maxPolarAngle={Math.PI / 2.05} minDistance={1.2} maxDistance={40} />
+      <OrbitControls makeDefault enableDamping dampingFactor={0.08} screenSpacePanning maxPolarAngle={Math.PI / 2.05} minDistance={1.2} maxDistance={80} />
     </>
   );
 }

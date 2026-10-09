@@ -262,17 +262,17 @@ function DirPad({ onNudge }: { onNudge: (dir: "left" | "right" | "up" | "down") 
     window.addEventListener("pointercancel", stop);
   };
   return (
-    <div className="pad" role="group" aria-label="Look around">
-      <button type="button" className="pad-btn up" aria-label="Look up" onPointerDown={hold("up")}>
+    <div className="pad" role="group" aria-label="Move view">
+      <button type="button" className="pad-btn up" aria-label="Move view up" onPointerDown={hold("up")}>
         <ChevronUp aria-hidden="true" />
       </button>
-      <button type="button" className="pad-btn left" aria-label="Look left" onPointerDown={hold("left")}>
+      <button type="button" className="pad-btn left" aria-label="Move view left" onPointerDown={hold("left")}>
         <ChevronLeft aria-hidden="true" />
       </button>
-      <button type="button" className="pad-btn right" aria-label="Look right" onPointerDown={hold("right")}>
+      <button type="button" className="pad-btn right" aria-label="Move view right" onPointerDown={hold("right")}>
         <ChevronRight aria-hidden="true" />
       </button>
-      <button type="button" className="pad-btn down" aria-label="Look down" onPointerDown={hold("down")}>
+      <button type="button" className="pad-btn down" aria-label="Move view down" onPointerDown={hold("down")}>
         <ChevronDown aria-hidden="true" />
       </button>
     </div>
