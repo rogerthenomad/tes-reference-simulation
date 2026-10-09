@@ -2,7 +2,7 @@ import { ContactShadows, Environment, OrbitControls } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Component, useEffect, useImperativeHandle, useRef, useState, type ReactNode, type Ref } from "react";
 import * as THREE from "three";
-import { PARTS, type PartId, type ViewId } from "@/lib/tes/content";
+import { PARTS, type PartId } from "@/lib/tes/content";
 import { useTes } from "@/lib/tes/store";
 import { applyPresentation, buildReferenceModel, disposeObject } from "@/components/tes/geometry";
 
@@ -19,39 +19,8 @@ const UNIT_SHOTS: Record<string, Shot> = {
   utility: shot([3.7, 1.5, 5.4], [3.5, 0.75, 1.05]),
 };
 
-const FOCUS: Partial<Record<PartId, Shot>> = {
-  shell: UNIT_SHOTS.iso,
-  roof: shot([4, 8, 8], [0, 3.2, 0]),
-  "hub-1": shot([-4.2, 2.3, 3.8], [-4.77, 1.7, 0.45]),
-  "hub-2": shot([-2.4, 2.3, 3.8], [-2.99, 1.7, 0.45]),
-  "hub-3": shot([-0.6, 2.3, 3.8], [-1.21, 1.7, 0.45]),
-  "hub-4": shot([1.2, 2.3, 3.8], [0.57, 1.7, 0.45]),
-  "trim-front": shot([2.4, 2.2, 3.6], [2.32, 2.1, 0.9]),
-  battery: shot([3.8, 2.1, 3.5], [3.68, 1.9, 0.95]),
-  ems: shot([5.2, 2.3, 3.6], [5.03, 2.0, 0.95]),
-  piping: shot([0, 4.2, 5], [-1, 3.2, 0.2]),
-  "water-front": shot([3.8, 1.4, 4.2], [3.75, 0.7, 1.1]),
-  "water-rear": shot([-4.4, 1.4, -4.2], [-4.6, 0.7, -1.1]),
-  electrolyte: shot([1.2, 2.8, -5.5], [1.24, 2.5, -0.6]),
-  fuel: shot([1.2, 1.6, -5.2], [1.24, 1.0, -0.6]),
-  "tank-frame": shot([1, 2.2, -6], [1, 1.6, -0.2]),
-  "trim-rear": shot([-4.6, 2.3, -4.4], [-4.93, 2.0, -0.7]),
-  vessel: shot([-3.4, 2.2, -4.6], [-3.79, 1.6, -0.65]),
-  lights: shot([0, 3.2, 6], [0, 3.4, 0]),
-  oxygen: shot([-1.4, 5.4, 3.2], [-1.6, 4.2, 0.15]),
-  thermal: shot([3.8, 5.6, 3], [3.6, 4.2, -0.15]),
-  anolyte: shot([-4.2, 2.1, 3.4], [-4.77, 1.6, 1.2]),
-  condenser: shot([2.4, 2, 3.6], [2.35, 1.4, 1.4]),
-  "carbon-skid": shot([5.6, 1.8, 3.4], [5.55, 1.1, 1.3]),
-};
-
 function shot(pos: [number, number, number], target: [number, number, number]): Shot {
   return { pos: new THREE.Vector3(...pos), target: new THREE.Vector3(...target) };
-}
-
-function pickShot(view: ViewId, selected: PartId): Shot {
-  if (selected !== "overview" && FOCUS[selected]) return FOCUS[selected]!;
-  return UNIT_SHOTS[view] || UNIT_SHOTS.iso;
 }
 
 class StageBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
@@ -140,8 +109,8 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
 
   useEffect(() => {
     flying.current = true;
-    desired.current = pickShot(view, selected);
-  }, [view, selected, shotN]);
+    desired.current = UNIT_SHOTS[view] || UNIT_SHOTS.iso;
+  }, [view, shotN]);
 
   useEffect(() => {
     const el = gl.domElement;

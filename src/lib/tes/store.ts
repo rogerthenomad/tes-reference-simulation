@@ -66,7 +66,7 @@ export const useTes = create<TesState>((set) => ({
   setExplode: (explode) => set({ explode }),
   setSpin: (spin) => set({ spin }),
   setRunning: (running) => set({ running }),
-  setSelected: (selected) => set((s) => ({ selected, shot: s.shot + 1 })),
+  setSelected: (selected) => set({ selected }),
   setPresent: (present) => set({ present }),
   setPanel: (panel) => set({ panel }),
   setCallouts: (callouts) => set({ callouts }),

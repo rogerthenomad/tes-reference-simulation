@@ -267,20 +267,21 @@
 }
 
 .dock {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  min-height: min-content;
-  max-height: 46%;
-  overflow: auto;
-  overscroll-behavior: contain;
+  overflow: visible;
   border-top: 1px solid var(--color-border);
   background: var(--color-surface);
   padding: 0.45rem 0.65rem;
 }
 
-.studio:not(:has(.explode-bar)) .dock {
-  padding-bottom: calc(0.45rem + env(safe-area-inset-bottom));
+.dock-main {
+  height: auto;
+  min-height: 2.75rem;
+  flex-wrap: wrap;
+  overflow: visible;
 }
 
 .chip-row {
@@ -361,14 +362,82 @@
   text-align: right;
 }
 
-.dock-extra {
+.menu-pop {
   display: none;
+  position: absolute;
+  z-index: 4;
+  left: 0.65rem;
+  right: 0.65rem;
+  bottom: calc(100% + 0.35rem);
   flex-direction: column;
   gap: 0.35rem;
+  max-height: min(52vh, 24rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  padding: 0.55rem;
 }
 
-.studio[data-more="true"] .dock-extra {
+.studio[data-more="true"] .menu-pop {
   display: flex;
+}
+
+.menu-pop .chip-row {
+  height: auto;
+  min-height: 2.75rem;
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
+.menu-label {
+  margin: 0.15rem 0 0;
+  color: var(--color-primary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.chip .flip {
+  transform: rotate(180deg);
+}
+
+.callout {
+  position: absolute;
+  z-index: 3;
+  top: 0.75rem;
+  left: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  max-width: 26rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-fg);
+  padding: 0.7rem 0.65rem 0.75rem 0.85rem;
+}
+
+.callout strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.callout p {
+  margin: 0.25rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.callout .icon-btn {
+  margin-left: auto;
 }
 
 .dossier {
@@ -482,7 +551,8 @@
 .icon-btn:focus-visible,
 .caption:focus-visible,
 .present-exit:focus-visible,
-.pad-btn:focus-visible {
+.pad-btn:focus-visible,
+.callout .icon-btn:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
@@ -543,18 +613,14 @@
   }
 
   .dock {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    max-height: none;
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 
-  .dock-extra {
-    display: contents;
-  }
-
-  .more-toggle {
-    display: none;
+  .menu-pop {
+    left: 1rem;
+    right: auto;
+    width: min(40rem, calc(100% - 2rem));
   }
 
   .dossier {

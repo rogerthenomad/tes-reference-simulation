@@ -255,3 +255,30 @@ export const ENGINEERING_PARTS: PartId[] = ["anolyte", "oxygen", "thermal", "con
 export function sceneStats() {
   return "150–200 kW · 350–400 gal/day · illustrative";
 }
+
+export const DOES: Record<PartId, string> = {
+  overview: "One container that makes power, recovers water, and handles a carbon-bearing fluid.",
+  shell: "The enclosure that holds the equipment and keeps the bay weather-tight.",
+  roof: "Closes the top of the bay. Open it when you want to see inside.",
+  "hub-1": "Turns the working fluid into power. Orange supply and blue return feed the stack.",
+  "hub-2": "Turns the working fluid into power. Orange supply and blue return feed the stack.",
+  "hub-3": "Turns the working fluid into power. Orange supply and blue return feed the stack.",
+  "hub-4": "Turns the working fluid into power. Orange supply and blue return feed the stack.",
+  "trim-front": "Holds trim fluid for the front process loop.",
+  battery: "Buffers power between the hubs and the site connection.",
+  ems: "Runs the unit and shows status to the operator.",
+  piping: "Carries supply, return, and utility fluid along the front of the bay.",
+  "water-front": "Takes recoverable water off the process side.",
+  "water-rear": "Takes recoverable water off the storage side.",
+  electrolyte: "Stores the carbon-bearing working fluid.",
+  fuel: "Stores the fuel that feeds the process.",
+  "tank-frame": "Holds the storage tanks up off the floor.",
+  "trim-rear": "Holds trim fluid for the storage-side loop.",
+  vessel: "Service vessel behind the tanks for supply and return.",
+  lights: "Lights the bay so the equipment can be inspected.",
+  oxygen: "Supports the oxygen path on the roof.",
+  thermal: "Rejects heat leaving the hubs.",
+  anolyte: "Circulates anolyte at the first hub.",
+  condenser: "Condenses vapor so water can be recovered.",
+  "carbon-skid": "Takes off the carbon-bearing liquid product.",
+};
