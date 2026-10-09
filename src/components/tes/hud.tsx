@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Pause, Play, SlidersHorizontal, Volume2, X } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Pause, Play, SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useState, type PointerEvent } from "react";
 import type { StageHandle } from "@/components/tes/stage";
 import {
@@ -49,7 +49,6 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
   const setSelected = useTes((s) => s.setSelected);
   const setPresent = useTes((s) => s.setPresent);
   const setPanel = useTes((s) => s.setPanel);
-  const [speech, setSpeech] = useState<"idle" | "playing">("idle");
   const [more, setMore] = useState(false);
   const [power, setPower] = useState(176);
   const [water, setWater] = useState(368);
@@ -67,24 +66,8 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
     return () => cancelAnimationFrame(raf);
   }, [running]);
 
-  useEffect(() => {
-    return () => window.speechSynthesis?.cancel();
-  }, []);
-
   const part = PARTS[selected] ?? PARTS.overview;
   const list = audience === "engineering" ? [...UNIT_PARTS, ...ENGINEERING_PARTS] : UNIT_PARTS;
-
-  const listen = () => {
-    if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(
-      `${part.title}. ${part.body} CIVIS Tech Global. www.civistechglobal.com.`,
-    );
-    utterance.rate = 0.96;
-    utterance.onend = () => setSpeech("idle");
-    setSpeech("playing");
-    window.speechSynthesis.speak(utterance);
-  };
 
   return (
     <div
@@ -157,10 +140,6 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
             </div>
             <p className="does">{DOES[selected]}</p>
             <p>{part.body}</p>
-            <button type="button" className="listen" onClick={listen}>
-              <Volume2 aria-hidden="true" />
-              {speech === "playing" ? "Speaking" : "Listen"}
-            </button>
           </div>
           <ul className="parts">
             {list.map((id) => (
