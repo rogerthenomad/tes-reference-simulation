@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Pause, Play, SlidersHorizontal, X } from "lucide-react";
-import { useEffect, useState, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import type { StageHandle } from "@/components/tes/stage";
 import {
   DOES,
@@ -50,6 +50,9 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
   const setPresent = useTes((s) => s.setPresent);
   const setPanel = useTes((s) => s.setPanel);
   const [more, setMore] = useState(false);
+  const [showPad, setShowPad] = useState(true);
+  const sheetRef = useRef<HTMLElement>(null);
+  const dragged = useRef(false);
   const [power, setPower] = useState(176);
   const [water, setWater] = useState(368);
 
@@ -68,6 +71,42 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
 
   const part = PARTS[selected] ?? PARTS.overview;
   const list = audience === "engineering" ? [...UNIT_PARTS, ...ENGINEERING_PARTS] : UNIT_PARTS;
+
+  const dragSheet = (event: ReactPointerEvent<HTMLElement>) => {
+    if (window.matchMedia("(min-width: 960px)").matches) return;
+    event.preventDefault();
+    const startY = event.clientY;
+    const parentH = sheetRef.current?.parentElement?.getBoundingClientRect().height ?? window.innerHeight;
+    const startH = panel && sheetRef.current ? sheetRef.current.getBoundingClientRect().height : 0;
+    let next = startH;
+    let opened = panel;
+    dragged.current = false;
+    const move = (ev: PointerEvent) => {
+      if (Math.abs(startY - ev.clientY) > 8) dragged.current = true;
+      next = Math.min(parentH * 0.72, Math.max(0, startH + (startY - ev.clientY)));
+      if (!sheetRef.current || next <= 48) return;
+      if (!opened) {
+        opened = true;
+        setPanel(true);
+      }
+      sheetRef.current.style.height = `${next}px`;
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      if (!sheetRef.current) return;
+      if (next < 88) {
+        sheetRef.current.style.height = "";
+        setPanel(false);
+        return;
+      }
+      const height = next > parentH * 0.5 ? parentH * 0.66 : parentH * 0.36;
+      sheetRef.current.style.height = `${Math.round(height)}px`;
+      setPanel(true);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
 
   return (
     <div
@@ -95,7 +134,19 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
         <div className="viewport-col">
           <div className="viewport">
             {children}
-            <DirPad onNudge={(dir) => stageRef.current?.nudge(dir)} />
+            {showPad ? <DirPad onNudge={(dir) => stageRef.current?.nudge(dir)} /> : null}
+            <button
+              type="button"
+              className="sheet-tab"
+              onPointerDown={dragSheet}
+              onClick={() => {
+                if (dragged.current) return;
+                setPanel(true);
+              }}
+            >
+              <span className="grab" />
+              Swipe up for notes
+            </button>
             {selected !== "overview" ? (
               <aside className="callout">
                 <div>
@@ -127,14 +178,26 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
           </button>
         </div>
 
-        <aside className="dossier" id="dossier">
+        <aside className="dossier" id="dossier" ref={sheetRef}>
+          <button type="button" className="sheet-grab" aria-label="Resize notes" onPointerDown={dragSheet}>
+            <span className="grab" />
+          </button>
+          <div className="sheet-scroll">
           <div className="note-pin">
             <div className="dossier-head">
               <div>
                 <p className="kicker">CIVIS Tech Global</p>
                 <h1>{part.title}</h1>
               </div>
-              <button type="button" className="icon-btn" aria-label="Close notes" onClick={() => setPanel(false)}>
+              <button
+                type="button"
+                className="icon-btn"
+                aria-label="Close notes"
+                onClick={() => {
+                  if (sheetRef.current) sheetRef.current.style.height = "";
+                  setPanel(false);
+                }}
+              >
                 <X aria-hidden="true" />
               </button>
             </div>
@@ -153,6 +216,7 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
           <p className="fine">
             Visual reconstruction of the reference Blender model. Not a fabrication drawing, P&ID, or release of controlled dimensions.
           </p>
+          </div>
         </aside>
       </div>
 
@@ -173,8 +237,19 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
             {running ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
             {running ? "Running" : "Run"}
           </button>
-          <button type="button" aria-pressed={panel} className={panel ? "chip on" : "chip"} onClick={() => setPanel(!panel)}>
+          <button
+            type="button"
+            aria-pressed={panel}
+            className={panel ? "chip on" : "chip"}
+            onClick={() => {
+              if (panel && sheetRef.current) sheetRef.current.style.height = "";
+              setPanel(!panel);
+            }}
+          >
             Notes
+          </button>
+          <button type="button" aria-pressed={showPad} className={showPad ? "chip on" : "chip"} onClick={() => setShowPad(!showPad)}>
+            Arrows
           </button>
           <button type="button" aria-pressed={present} className={present ? "chip on" : "chip"} onClick={() => setPresent(!present)}>
             {present ? "Show menus" : "Hide menus"}
@@ -247,7 +322,7 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
 }
 
 function DirPad({ onNudge }: { onNudge: (dir: "left" | "right" | "up" | "down") => void }) {
-  const hold = (dir: "left" | "right" | "up" | "down") => (event: PointerEvent<HTMLButtonElement>) => {
+  const hold = (dir: "left" | "right" | "up" | "down") => (event: ReactPointerEvent<HTMLButtonElement>) => {
     event.preventDefault();
     onNudge(dir);
     const timer = window.setInterval(() => onNudge(dir), 120);

@@ -137,6 +137,7 @@
 }
 
 .stage-wrap {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   min-height: 0;
@@ -509,6 +510,26 @@
   line-height: 1.5;
 }
 
+.sheet-tab,
+.sheet-grab {
+  display: none;
+}
+
+.grab {
+  display: block;
+  width: 2.5rem;
+  height: 0.28rem;
+  border-radius: 999px;
+  background: var(--color-border);
+}
+
+.sheet-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-height: 0;
+}
+
 .note-pin {
   display: flex;
   flex: 0 0 auto;
@@ -577,7 +598,8 @@
 @media (max-width: 959px) {
   .tagline,
   .brand em,
-  .site-full {
+  .site-full,
+  .caption .does {
     display: none;
   }
 
@@ -585,27 +607,93 @@
     display: inline;
   }
 
-  .studio[data-panel="true"] .stage-wrap {
-    grid-template-rows: minmax(8rem, 1fr) minmax(14rem, 46%);
+  .sheet-tab {
+    position: absolute;
+    z-index: 4;
+    left: 50%;
+    bottom: 0.55rem;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    min-width: 8.5rem;
+    min-height: 2.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    background: var(--color-surface);
+    color: var(--color-fg);
+    padding: 0.35rem 0.8rem 0.45rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    touch-action: none;
+  }
+
+  .studio[data-panel="true"] .sheet-tab,
+  .studio[data-present="true"] .sheet-tab {
+    display: none;
+  }
+
+  .studio[data-panel="true"] .callout {
+    display: none;
+  }
+
+  .dossier {
+    position: absolute;
+    z-index: 6;
+    left: 0.45rem;
+    right: 0.45rem;
+    bottom: 0.35rem;
+    display: none;
+    flex-direction: column;
+    height: 38%;
+    max-height: 72%;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: 1rem 1rem 0.7rem 0.7rem;
+    background: var(--color-surface);
+    box-shadow: 0 -10px 28px rgb(8 20 48 / 28%);
   }
 
   .studio[data-panel="true"] .dossier {
     display: flex;
-    flex-direction: column;
-    gap: 0.65rem;
-    min-height: 0;
-    overflow: hidden;
+  }
+
+  .sheet-grab {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 1.6rem;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    touch-action: none;
+  }
+
+  .sheet-scroll {
+    overflow: auto;
+    flex: 1;
     overscroll-behavior: contain;
-    border-top: 1px solid var(--color-border);
-    background: var(--color-surface);
-    padding: 0.75rem 0.85rem 0.9rem;
+    padding: 0 0.85rem 0.9rem;
+  }
+
+  .note-pin {
+    position: static;
+  }
+
+  .parts {
+    overflow: visible;
+    flex: none;
   }
 
   .dossier h1 {
-    font-size: 1.55rem;
+    font-size: 1.45rem;
   }
 
-  .studio[data-present="true"] .dossier {
+  .studio[data-present="true"] .dossier,
+  .studio[data-present="true"] .sheet-tab {
     display: none;
   }
 }

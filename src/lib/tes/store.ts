@@ -73,7 +73,7 @@ export const useTes = create<TesState>((set) => ({
       const engineering = selected === "oxygen" || selected === "thermal" || selected === "anolyte" || selected === "condenser" || selected === "carbon-skid";
       return {
         selected,
-        panel: selected === "overview" ? s.panel : true,
+        panel: selected === "overview" || (typeof window !== "undefined" && window.matchMedia("(max-width: 959px)").matches) ? s.panel : true,
         flow: flow ?? (selected === "overview" ? "off" : s.flow),
         audience: engineering ? "engineering" : s.audience,
       };
