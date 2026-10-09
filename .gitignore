@@ -1,0 +1,11 @@
+node_modules
+.output
+dist
+.vinxi
+.vercel
+.nitro
+*.log
+.DS_Store
+screenshots
+artifacts
+.grok
