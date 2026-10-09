@@ -1,17 +1,7 @@
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Pause, Play, SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import type { StageHandle } from "@/components/tes/stage";
-import {
-  DOES,
-  ENGINEERING_PARTS,
-  FLOWS,
-  PARTS,
-  UNIT_PARTS,
-  VIEWS,
-  sceneStats,
-  type FlowId,
-  type PartId,
-} from "@/lib/tes/content";
+import { DOES, FLOWS, PARTS, UNIT_PARTS, VIEWS, sceneStats, type FlowId, type PartId } from "@/lib/tes/content";
 import { useTes } from "@/lib/tes/store";
 
 const SHELLS = [
@@ -31,7 +21,6 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
   const shell = useTes((s) => s.shell);
   const isolate = useTes((s) => s.isolate);
   const flow = useTes((s) => s.flow);
-  const audience = useTes((s) => s.audience);
   const explode = useTes((s) => s.explode);
   const spin = useTes((s) => s.spin);
   const running = useTes((s) => s.running);
@@ -42,7 +31,6 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
   const setShell = useTes((s) => s.setShell);
   const setIsolate = useTes((s) => s.setIsolate);
   const setFlow = useTes((s) => s.setFlow);
-  const setAudience = useTes((s) => s.setAudience);
   const setExplode = useTes((s) => s.setExplode);
   const setSpin = useTes((s) => s.setSpin);
   const setRunning = useTes((s) => s.setRunning);
@@ -70,7 +58,7 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
   }, [running]);
 
   const part = PARTS[selected] ?? PARTS.overview;
-  const list = audience === "engineering" ? [...UNIT_PARTS, ...ENGINEERING_PARTS] : UNIT_PARTS;
+  const list = UNIT_PARTS;
 
   const dragSheet = (event: ReactPointerEvent<HTMLElement>) => {
     if (window.matchMedia("(min-width: 960px)").matches) return;
@@ -109,12 +97,7 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
   };
 
   return (
-    <div
-      className="studio"
-      data-present={present ? "true" : "false"}
-      data-panel={panel ? "true" : "false"}
-      data-more={more ? "true" : "false"}
-    >
+    <div className="studio" data-present={present ? "true" : "false"} data-panel={panel ? "true" : "false"} data-more={more ? "true" : "false"}>
       <header className="topbar">
         <a className="brand" href="https://www.civistechglobal.com" target="_blank" rel="noreferrer">
           <img src="/brand/civis-mark.svg" alt="" className="mark" />
@@ -164,13 +147,7 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
               </button>
             ) : null}
           </div>
-          <button
-            type="button"
-            className="caption"
-            aria-expanded={panel}
-            aria-controls="dossier"
-            onClick={() => setPanel(!panel)}
-          >
+          <button type="button" className="caption" aria-expanded={panel} aria-controls="dossier" onClick={() => setPanel(!panel)}>
             <strong>{part.title}</strong>
             <span className="does">{selected === "overview" ? sceneStats() : DOES[selected]}</span>
             <span className="live">{running ? `${Math.round(power)} kW` : "Standby"}</span>
@@ -183,52 +160,43 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
             <span className="grab" />
           </button>
           <div className="sheet-scroll">
-          <div className="note-pin">
-            <div className="dossier-head">
-              <div>
-                <p className="kicker">CIVIS Tech Global</p>
-                <h1>{part.title}</h1>
-              </div>
-              <button
-                type="button"
-                className="icon-btn"
-                aria-label="Close notes"
-                onClick={() => {
-                  if (sheetRef.current) sheetRef.current.style.height = "";
-                  setPanel(false);
-                }}
-              >
-                <X aria-hidden="true" />
-              </button>
-            </div>
-            <p className="does">{DOES[selected]}</p>
-            <p>{part.body}</p>
-          </div>
-          <ul className="parts">
-            {list.map((id) => (
-              <li key={id}>
-                <button type="button" aria-pressed={selected === id} className={selected === id ? "part on" : "part"} onClick={() => setSelected(id)}>
-                  {PARTS[id].title}
+            <div className="note-pin">
+              <div className="dossier-head">
+                <div>
+                  <p className="kicker">CIVIS Tech Global</p>
+                  <h1>{part.title}</h1>
+                </div>
+                <button
+                  type="button"
+                  className="icon-btn"
+                  aria-label="Close notes"
+                  onClick={() => {
+                    if (sheetRef.current) sheetRef.current.style.height = "";
+                    setPanel(false);
+                  }}
+                >
+                  <X aria-hidden="true" />
                 </button>
-              </li>
-            ))}
-          </ul>
-          <p className="fine">
-            Visual reconstruction of the reference Blender model. Not a fabrication drawing, P&ID, or release of controlled dimensions.
-          </p>
+              </div>
+              <p className="does">{DOES[selected]}</p>
+            </div>
+            <ul className="parts">
+              {list.map((id) => (
+                <li key={id}>
+                  <button type="button" aria-pressed={selected === id} className={selected === id ? "part on" : "part"} onClick={() => setSelected(id)}>
+                    {PARTS[id].title}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <p className="fine">Visual reference of the TES unit.</p>
           </div>
         </aside>
       </div>
 
       <footer className="dock">
         <div className="chip-row dock-main">
-          <button
-            type="button"
-            className={more ? "chip on" : "chip"}
-            aria-expanded={more}
-            aria-controls="functions"
-            onClick={() => setMore(!more)}
-          >
+          <button type="button" className={more ? "chip on" : "chip"} aria-expanded={more} aria-controls="functions" onClick={() => setMore(!more)}>
             <SlidersHorizontal aria-hidden="true" />
             Functions
             <ChevronDown aria-hidden="true" className={more ? "flip" : ""} />
@@ -283,40 +251,28 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
           <p className="menu-label">Flows</p>
           <div className="chip-row" aria-label="Flow">
             {FLOWS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                aria-pressed={flow === item.id}
-                className={flow === item.id ? "chip on" : "chip"}
-                onClick={() => {
-                  setFlow(item.id as FlowId);
-                  if (item.id === "oxygen" || item.id === "thermal") setAudience("engineering");
-                }}
-              >
+              <button key={item.id} type="button" aria-pressed={flow === item.id} className={flow === item.id ? "chip on" : "chip"} onClick={() => setFlow(item.id as FlowId)}>
                 {item.label}
               </button>
             ))}
-            <button type="button" aria-pressed={audience === "engineering"} className={audience === "engineering" ? "chip on" : "chip"} onClick={() => setAudience(audience === "engineering" ? "doe" : "engineering")}>
-              {audience === "engineering" ? "Engineering" : "DOE view"}
-            </button>
           </div>
         </div>
       </footer>
       <div className="explode-bar">
-          <label className="explode">
-            Explode
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={explode}
-              aria-valuetext={`${Math.round(explode * 100)} percent`}
-              onChange={(event) => setExplode(Number(event.target.value))}
-            />
-            <span className="explode-pct">{Math.round(explode * 100)}%</span>
-          </label>
-        </div>
+        <label className="explode">
+          Explode
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={explode}
+            aria-valuetext={`${Math.round(explode * 100)} percent`}
+            onChange={(event) => setExplode(Number(event.target.value))}
+          />
+          <span className="explode-pct">{Math.round(explode * 100)}%</span>
+        </label>
+      </div>
     </div>
   );
 }
