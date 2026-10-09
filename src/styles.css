@@ -149,23 +149,33 @@
   grid-template-rows: minmax(0, 1fr) auto;
   min-height: 0;
   min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .viewport {
   position: relative;
   min-height: 0;
+  min-width: 0;
+  max-width: 100%;
   height: 100%;
+  overflow: hidden;
   background: #9eb0c0;
 }
 
 .viewport > div:first-child {
+  width: 100%;
   height: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .viewport canvas {
   display: block;
-  width: 100%;
-  height: 100%;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100%;
   touch-action: none;
 }
 
@@ -525,6 +535,10 @@
   flex: 0 0 auto;
   flex-direction: column;
   gap: 0.45rem;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--color-surface);
 }
 
 .note-pin .does {
@@ -648,11 +662,15 @@
   }
 
   .dossier {
+    position: relative;
+    z-index: 2;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
     min-height: 0;
-    overflow: hidden;
+    min-width: 0;
+    height: 100%;
+    overflow: auto;
     border-left: 1px solid var(--color-border);
     background: var(--color-surface);
     padding: 1.15rem 1rem 1.25rem;
