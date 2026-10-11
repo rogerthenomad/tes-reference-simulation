@@ -15,11 +15,11 @@ export async function buildFacility() {
   const darkSteel = new THREE.MeshStandardMaterial({ color: "#5c6770", metalness: 0.65, roughness: 0.38 });
   const yellow = new THREE.MeshStandardMaterial({ color: "#e8a317", metalness: 0.22, roughness: 0.42 });
   const blue = new THREE.MeshStandardMaterial({ color: "#1F4A90", metalness: 0.2, roughness: 0.38 });
-  const rubber = new THREE.MeshStandardMaterial({ color: "#2a2e32", metalness: 0.05, roughness: 0.82 });
   const glass = new THREE.MeshStandardMaterial({ color: "#c5dcec", metalness: 0.15, roughness: 0.06, transparent: true, opacity: 0.4 });
   const floor = new THREE.MeshStandardMaterial({ color: "#c5ced6", metalness: 0.04, roughness: 0.9 });
   const screen = new THREE.MeshStandardMaterial({ color: "#0a3a6a", emissive: "#1F4A90", emissiveIntensity: 0.9, roughness: 0.18 });
   const gauge = new THREE.MeshStandardMaterial({ color: "#d8e4ee", metalness: 0.4, roughness: 0.25, emissive: "#4A9AD4", emissiveIntensity: 0.3 });
+  const stainless = new THREE.MeshStandardMaterial({ color: "#d0d6dc", metalness: 0.88, roughness: 0.18 });
 
   const add = (parent: THREE.Object3D, part: string, mesh: THREE.Mesh, pos: [number, number, number], rot?: [number, number, number]) => {
     mesh.position.set(...pos);
@@ -67,6 +67,24 @@ export async function buildFacility() {
     rows.add(copy);
   }
   root.add(rows);
+
+  // Denser row manifolds and cross-connects
+  for (let i = 0; i < 10; i++) {
+    const z = -18 + i * 3.6;
+    const manifold = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 12, 12), stainless);
+    manifold.rotation.z = Math.PI / 2;
+    manifold.position.set(0, 1.4, z);
+    manifold.userData.part = "rows";
+    rows.add(manifold);
+    flange(rows, "rows", [-5.5, 1.4, z], "x");
+    flange(rows, "rows", [5.5, 1.4, z], "x");
+    if (i < 9) {
+      const cross = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 3.6, 8), stainless);
+      cross.position.set(4, 1.4, z + 1.8);
+      cross.userData.part = "rows";
+      rows.add(cross);
+    }
+  }
 
   const hall = new THREE.Group();
   hall.name = "facility";
@@ -118,7 +136,7 @@ export async function buildFacility() {
   tankBase.userData.part = "water-handling";
   water.add(tankBase);
   flange(water, "water-handling", [13.6, 1.8, -8], "x");
-  const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 7.2, 16), steel);
+  const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 7.2, 16), stainless);
   pipe.rotation.z = Math.PI / 2;
   pipe.position.set(11.6, 1.8, -8);
   pipe.userData.part = "water-handling";
