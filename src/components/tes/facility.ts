@@ -10,16 +10,15 @@ export async function buildFacility() {
   const root = new THREE.Group();
   root.name = "tes-facility";
 
-  const steel = new THREE.MeshStandardMaterial({ color: "#b8c2cc", metalness: 0.72, roughness: 0.32 });
-  const painted = new THREE.MeshStandardMaterial({ color: "#e8eef4", metalness: 0.18, roughness: 0.48 });
-  const darkSteel = new THREE.MeshStandardMaterial({ color: "#5c6770", metalness: 0.65, roughness: 0.38 });
-  const yellow = new THREE.MeshStandardMaterial({ color: "#e8a317", metalness: 0.22, roughness: 0.42 });
-  const blue = new THREE.MeshStandardMaterial({ color: "#1F4A90", metalness: 0.2, roughness: 0.38 });
-  const glass = new THREE.MeshStandardMaterial({ color: "#c5dcec", metalness: 0.15, roughness: 0.06, transparent: true, opacity: 0.4 });
+  const steel = new THREE.MeshStandardMaterial({ color: "#b8c2cc", metalness: 0.78, roughness: 0.28 });
+  const painted = new THREE.MeshStandardMaterial({ color: "#e8eef4", metalness: 0.15, roughness: 0.45 });
+  const darkSteel = new THREE.MeshStandardMaterial({ color: "#4a545c", metalness: 0.7, roughness: 0.34 });
+  const yellow = new THREE.MeshStandardMaterial({ color: "#e8a317", metalness: 0.2, roughness: 0.4 });
+  const blue = new THREE.MeshStandardMaterial({ color: "#1F4A90", metalness: 0.22, roughness: 0.36 });
   const floor = new THREE.MeshStandardMaterial({ color: "#c5ced6", metalness: 0.04, roughness: 0.9 });
   const screen = new THREE.MeshStandardMaterial({ color: "#0a3a6a", emissive: "#1F4A90", emissiveIntensity: 0.9, roughness: 0.18 });
-  const gauge = new THREE.MeshStandardMaterial({ color: "#d8e4ee", metalness: 0.4, roughness: 0.25, emissive: "#4A9AD4", emissiveIntensity: 0.3 });
-  const stainless = new THREE.MeshStandardMaterial({ color: "#d0d6dc", metalness: 0.88, roughness: 0.18 });
+  const gauge = new THREE.MeshStandardMaterial({ color: "#d8e4ee", metalness: 0.45, roughness: 0.22, emissive: "#4A9AD4", emissiveIntensity: 0.35 });
+  const glass = new THREE.MeshStandardMaterial({ color: "#c5dcec", metalness: 0.15, roughness: 0.06, transparent: true, opacity: 0.4 });
 
   const add = (parent: THREE.Object3D, part: string, mesh: THREE.Mesh, pos: [number, number, number], rot?: [number, number, number]) => {
     mesh.position.set(...pos);
@@ -32,21 +31,21 @@ export async function buildFacility() {
   };
 
   const bolt = (parent: THREE.Object3D, part: string, pos: [number, number, number]) => {
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.06, 8), darkSteel);
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.05, 8), darkSteel);
     m.rotation.x = Math.PI / 2;
     add(parent, part, m, pos);
   };
 
-  const flange = (parent: THREE.Object3D, part: string, pos: [number, number, number], axis: "x" | "y" | "z" = "y") => {
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.06, 16), steel);
+  const flange = (parent: THREE.Object3D, part: string, pos: [number, number, number], axis: "x" | "y" | "z" = "y", r = 0.22) => {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.05, 14), steel);
     if (axis === "x") m.rotation.z = Math.PI / 2;
     if (axis === "z") m.rotation.x = Math.PI / 2;
     add(parent, part, m, pos);
     for (let i = 0; i < 6; i++) {
       const a = (i / 6) * Math.PI * 2;
-      const bx = Math.cos(a) * 0.2;
-      const by = Math.sin(a) * 0.2;
-      const b = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.08, 6), darkSteel);
+      const bx = Math.cos(a) * r * 0.65;
+      const by = Math.sin(a) * r * 0.65;
+      const b = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.06, 6), darkSteel);
       if (axis === "x") b.rotation.z = Math.PI / 2;
       if (axis === "z") b.rotation.x = Math.PI / 2;
       const bp: [number, number, number] = axis === "y" ? [pos[0] + bx, pos[1], pos[2] + by] : axis === "x" ? [pos[0], pos[1] + bx, pos[2] + by] : [pos[0] + bx, pos[1] + by, pos[2]];
@@ -59,37 +58,43 @@ export async function buildFacility() {
   rows.userData.part = "rows";
   for (let i = 0; i < 10; i++) {
     const copy = i === 0 ? unit : unit.clone(true);
-    copy.position.set(0, 0, -18 + i * 3.6);
-    copy.userData.part = "rows";
-    copy.traverse((obj) => {
-      obj.userData.part = "rows";
-    });
-    rows.add(copy);
-  }
-  root.add(rows);
-
-  // Denser row manifolds and cross-connects
-  for (let i = 0; i < 10; i++) {
     const z = -18 + i * 3.6;
-    const manifold = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 12, 12), stainless);
-    manifold.rotation.z = Math.PI / 2;
-    manifold.position.set(0, 1.4, z);
-    manifold.userData.part = "rows";
-    rows.add(manifold);
-    flange(rows, "rows", [-5.5, 1.4, z], "x");
-    flange(rows, "rows", [5.5, 1.4, z], "x");
+    copy.position.set(0, 0, z);
+    copy.userData.part = "rows";
+    copy.traverse((obj) => { obj.userData.part = "rows"; });
+    rows.add(copy);
+    // Row manifolds and flanges
+    const manL = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.8, 10), steel);
+    manL.rotation.z = Math.PI / 2;
+    manL.position.set(-4.2, 1.1, z);
+    manL.userData.part = "rows";
+    rows.add(manL);
+    flange(rows, "rows", [-5.6, 1.1, z], "x", 0.14);
+    const manR = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.8, 10), steel);
+    manR.rotation.z = Math.PI / 2;
+    manR.position.set(4.2, 1.1, z);
+    manR.userData.part = "rows";
+    rows.add(manR);
+    flange(rows, "rows", [5.6, 1.1, z], "x", 0.14);
+    // Cross connect
     if (i < 9) {
-      const cross = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 3.6, 8), stainless);
-      cross.position.set(4, 1.4, z + 1.8);
+      const cross = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 3.2, 8), darkSteel);
+      cross.position.set(0, 1.35, z + 1.8);
       cross.userData.part = "rows";
       rows.add(cross);
     }
+    // Gauge on each row
+    const g = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.03, 12), gauge);
+    g.rotation.x = Math.PI / 2;
+    g.position.set(3.2, 1.55, z);
+    g.userData.part = "rows";
+    rows.add(g);
   }
+  root.add(rows);
 
   const hall = new THREE.Group();
   hall.name = "facility";
   hall.userData.part = "facility";
-
   add(hall, "facility", new THREE.Mesh(new THREE.BoxGeometry(52, 0.12, 46), floor), [2, -0.06, 0]);
   for (let i = 0; i < 7; i++) {
     const x = -18 + i * 7;
@@ -99,7 +104,6 @@ export async function buildFacility() {
     bolt(hall, "facility", [x, 1.2, -21.7]);
     bolt(hall, "facility", [x, 1.2, 21.7]);
   }
-
   const roof = new THREE.Group();
   roof.name = "roof";
   roof.userData.part = "roof";
@@ -135,8 +139,8 @@ export async function buildFacility() {
   tankBase.position.set(16, 0.15, -8);
   tankBase.userData.part = "water-handling";
   water.add(tankBase);
-  flange(water, "water-handling", [13.6, 1.8, -8], "x");
-  const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 7.2, 16), stainless);
+  flange(water, "water-handling", [13.6, 1.8, -8], "x", 0.28);
+  const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 7.2, 16), steel);
   pipe.rotation.z = Math.PI / 2;
   pipe.position.set(11.6, 1.8, -8);
   pipe.userData.part = "water-handling";
@@ -176,21 +180,12 @@ export async function buildFacility() {
     lamp.userData.part = "power-collection";
     lamp.userData.flow = "power";
     power.add(lamp);
-    for (let b = 0; b < 4; b++) {
-      bolt(power, "power-collection", [15.4 + (b % 2 === 0 ? -0.7 : 0.7), 0.4 + Math.floor(b / 2) * 1.6, -1.55 + i * 1.6]);
-    }
   }
   const bus = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 6.4), darkSteel);
   bus.position.set(16.6, 2.6, 0.4);
   bus.userData.part = "power-collection";
   bus.userData.flow = "power";
   power.add(bus);
-  for (let i = 0; i < 4; i++) {
-    const conduit = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.8, 8), darkSteel);
-    conduit.position.set(16.2, 2.2, -2 + i * 1.6);
-    conduit.userData.part = "power-collection";
-    power.add(conduit);
-  }
   root.add(power);
 
   const ops = new THREE.Group();
@@ -205,10 +200,6 @@ export async function buildFacility() {
   windowPane.position.set(16, 1.9, 13.05);
   windowPane.userData.part = "operations";
   ops.add(windowPane);
-  const doorFrame = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.2, 0.08), darkSteel);
-  doorFrame.position.set(19.2, 1.1, 13.05);
-  doorFrame.userData.part = "operations";
-  ops.add(doorFrame);
   const desk = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.08, 1.2), steel);
   desk.position.set(16, 0.95, 10.4);
   desk.userData.part = "operations";
@@ -218,26 +209,11 @@ export async function buildFacility() {
     mon.position.set(15.1 + i * 0.95, 1.4, 10.95);
     mon.userData.part = "operations";
     ops.add(mon);
-    const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.3, 8), darkSteel);
-    stand.position.set(15.1 + i * 0.95, 1.1, 10.9);
-    stand.userData.part = "operations";
-    ops.add(stand);
   }
   const rack = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.8, 0.6), painted);
   rack.position.set(18.8, 0.9, 9.2);
   rack.userData.part = "operations";
   ops.add(rack);
-  for (let i = 0; i < 4; i++) {
-    const led = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.04, 0.02), new THREE.MeshStandardMaterial({ color: "#00c2b3", emissive: "#00c2b3", emissiveIntensity: 0.8 }));
-    led.position.set(18.8, 0.4 + i * 0.35, 9.5);
-    led.userData.part = "operations";
-    ops.add(led);
-  }
-  const gaugeDial = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.04, 16), gauge);
-  gaugeDial.rotation.x = Math.PI / 2;
-  gaugeDial.position.set(14.2, 1.6, 10.95);
-  gaugeDial.userData.part = "operations";
-  ops.add(gaugeDial);
   root.add(ops);
 
   for (let i = 0; i < 5; i++) {
