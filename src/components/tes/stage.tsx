@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { PARTS, type PartId } from "@/lib/tes/content";
 import { useTes } from "@/lib/tes/store";
 import { applyPresentation, buildReferenceModel, disposeObject } from "@/components/tes/geometry";
+import { buildFacility } from "@/components/tes/facility";
 
 export type StageHandle = { nudge: (dir: "left" | "right" | "up" | "down") => void };
 
@@ -17,6 +18,15 @@ const UNIT_SHOTS: Record<string, Shot> = {
   top: shot([0.4, 18, 0.6], [0, 0.2, 0]),
   end: shot([15, 2.5, 3.2], [0, 1.8, 0]),
   utility: shot([3.7, 1.5, 5.4], [3.5, 0.75, 1.05]),
+};
+
+const FACILITY_SHOTS: Record<string, Shot> = {
+  front: shot([2, 4, 32], [2, 2, 0]),
+  back: shot([2, 4, -32], [2, 2, 0]),
+  iso: shot([28, 14, 22], [2, 2, 0]),
+  top: shot([2, 36, 0.5], [2, 0, 0]),
+  end: shot([38, 6, 0], [2, 2, 0]),
+  utility: shot([18, 4, 8], [16, 1.5, 0]),
 };
 
 function shot(pos: [number, number, number], target: [number, number, number]): Shot {
@@ -61,6 +71,7 @@ export function Stage({ stageRef }: { stageRef: Ref<StageHandle> }) {
 }
 
 function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
+  const sceneId = useTes((s) => s.scene);
   const view = useTes((s) => s.view);
   const shell = useTes((s) => s.shell);
   const isolate = useTes((s) => s.isolate);
@@ -76,7 +87,8 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
   const models = useRef<THREE.Group | null>(null);
   const [ready, setReady] = useState(false);
   const flying = useRef(true);
-  const desired = useRef<Shot>(UNIT_SHOTS.iso);
+  const shots = sceneId === "facility" ? FACILITY_SHOTS : UNIT_SHOTS;
+  const desired = useRef<Shot>(shots.iso);
   const controls = useThree((s) => s.controls) as {
     target: THREE.Vector3;
     update: () => void;
@@ -90,12 +102,15 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
 
   useEffect(() => {
     let dead = false;
-    buildReferenceModel().then((unit) => {
+    setReady(false);
+    const load = sceneId === "facility" ? buildFacility() : buildReferenceModel();
+    load.then((group) => {
       if (dead) {
-        disposeObject(unit);
+        disposeObject(group);
         return;
       }
-      models.current = unit;
+      if (models.current) disposeObject(models.current);
+      models.current = group;
       setReady(true);
     });
     return () => {
@@ -105,12 +120,13 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
         models.current = null;
       }
     };
-  }, []);
+  }, [sceneId]);
 
   useEffect(() => {
     flying.current = true;
-    desired.current = UNIT_SHOTS[view] || UNIT_SHOTS.iso;
-  }, [view, shotN]);
+    const active = sceneId === "facility" ? FACILITY_SHOTS : UNIT_SHOTS;
+    desired.current = active[view] || active.iso;
+  }, [view, shotN, sceneId]);
 
   useEffect(() => {
     const el = gl.domElement;
@@ -184,6 +200,7 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
     }
   };
 
+  const ground = sceneId === "facility" ? 60 : 22;
   return (
     <>
       <color attach="background" args={["#9eb0c0"]} />
@@ -194,13 +211,13 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
       <Environment files="/hdri/warehouse.hdr" environmentIntensity={quality === "high" ? 1.15 : 0.75} background={false} />
       {ready && models.current ? <primitive object={models.current} onClick={pick} /> : null}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
-        <circleGeometry args={[22, 64]} />
+        <circleGeometry args={[ground, 64]} />
         <meshStandardMaterial color="#c5ced6" roughness={0.92} metalness={0.04} />
       </mesh>
       {quality === "high" ? (
-        <ContactShadows position={[0, 0, 0]} opacity={0.35} scale={30} blur={2.4} far={8} />
+        <ContactShadows position={[0, 0, 0]} opacity={0.35} scale={ground * 1.4} blur={2.4} far={8} />
       ) : null}
-      <OrbitControls makeDefault enableDamping dampingFactor={0.08} screenSpacePanning maxPolarAngle={Math.PI / 2.05} minDistance={1.2} maxDistance={80} />
+      <OrbitControls makeDefault enableDamping dampingFactor={0.08} screenSpacePanning maxPolarAngle={Math.PI / 2.05} minDistance={1.2} maxDistance={sceneId === "facility" ? 120 : 80} />
     </>
   );
 }

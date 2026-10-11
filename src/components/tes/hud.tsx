@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Pause, Play, SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import type { StageHandle } from "@/components/tes/stage";
-import { DOES, FLOWS, PARTS, UNIT_PARTS, VIEWS, sceneStats, type FlowId, type PartId } from "@/lib/tes/content";
+import { DOES, FACILITY_PARTS, FLOWS, PARTS, UNIT_PARTS, VIEWS, sceneStats, type FlowId, type PartId, type SceneId } from "@/lib/tes/content";
 import { useTes } from "@/lib/tes/store";
 
 const SHELLS = [
@@ -16,7 +16,13 @@ const WALLS = [
   { id: "storage", label: "Storage" },
 ] as const;
 
+const SCENES: { id: SceneId; label: string }[] = [
+  { id: "unit", label: "Unit" },
+  { id: "facility", label: "Facility" },
+];
+
 export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHandle | null>; children: React.ReactNode }) {
+  const scene = useTes((s) => s.scene);
   const view = useTes((s) => s.view);
   const shell = useTes((s) => s.shell);
   const isolate = useTes((s) => s.isolate);
@@ -27,6 +33,7 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
   const selected = useTes((s) => s.selected);
   const present = useTes((s) => s.present);
   const panel = useTes((s) => s.panel);
+  const setScene = useTes((s) => s.setScene);
   const setView = useTes((s) => s.setView);
   const setShell = useTes((s) => s.setShell);
   const setIsolate = useTes((s) => s.setIsolate);
@@ -58,7 +65,7 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
   }, [running]);
 
   const part = PARTS[selected] ?? PARTS.overview;
-  const list = UNIT_PARTS;
+  const list = scene === "facility" ? FACILITY_PARTS : UNIT_PARTS;
 
   const dragSheet = (event: ReactPointerEvent<HTMLElement>) => {
     if (window.matchMedia("(min-width: 960px)").matches) return;
@@ -189,13 +196,24 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
                 </li>
               ))}
             </ul>
-            <p className="fine">Visual reference of the TES unit.</p>
+            <p className="fine">{scene === "facility" ? "Visual reference of the TES industrial facility." : "Visual reference of the TES unit."}</p>
           </div>
         </aside>
       </div>
 
       <footer className="dock">
         <div className="chip-row dock-main">
+          {SCENES.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              aria-pressed={scene === item.id}
+              className={scene === item.id ? "chip on" : "chip"}
+              onClick={() => setScene(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
           <button type="button" className={more ? "chip on" : "chip"} aria-expanded={more} aria-controls="functions" onClick={() => setMore(!more)}>
             <SlidersHorizontal aria-hidden="true" />
             Functions
