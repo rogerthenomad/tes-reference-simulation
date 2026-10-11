@@ -1,6 +1,14 @@
 import { ContactShadows, Environment, OrbitControls } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Component, useEffect, useImperativeHandle, useRef, useState, type ReactNode, type Ref } from "react";
+import {
+  Component,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+  type ReactNode,
+  type Ref,
+} from "react";
 import * as THREE from "three";
 import { PARTS, type PartId } from "@/lib/tes/content";
 import { useTes } from "@/lib/tes/store";
@@ -21,11 +29,11 @@ const UNIT_SHOTS: Record<string, Shot> = {
 };
 
 const FACILITY_SHOTS: Record<string, Shot> = {
-  front: shot([2, 4, 32], [2, 2, 0]),
-  back: shot([2, 4, -32], [2, 2, 0]),
-  iso: shot([28, 14, 22], [2, 2, 0]),
-  top: shot([2, 36, 0.5], [2, 0, 0]),
-  end: shot([38, 6, 0], [2, 2, 0]),
+  front: shot([2, 9, 80], [2, 2, 0]),
+  back: shot([2, 9, -80], [2, 2, 0]),
+  iso: shot([65, 42, 58], [2, 2, 0]),
+  top: shot([2, 100, 0.5], [2, 0, 0]),
+  end: shot([100, 15, 0], [2, 2, 0]),
   utility: shot([18, 4, 8], [16, 1.5, 0]),
 };
 
@@ -42,7 +50,8 @@ class StageBoundary extends Component<{ children: ReactNode }, { failed: boolean
     if (this.state.failed) {
       return (
         <div className="grid h-full place-items-center px-6 text-center text-muted">
-          The 3D view could not start in this browser. The reference model is still described in the dossier.
+          The 3D view could not start in this browser. The reference model is still described in the
+          dossier.
         </div>
       );
     }
@@ -52,16 +61,25 @@ class StageBoundary extends Component<{ children: ReactNode }, { failed: boolean
 
 export function Stage({ stageRef }: { stageRef: Ref<StageHandle> }) {
   const [mounted, setMounted] = useState(false);
+  const highQuality = useTes((s) => s.quality) === "high";
   useEffect(() => setMounted(true), []);
   if (!mounted) {
-    return <div className="grid h-full place-items-center text-sm text-muted">Preparing the bay…</div>;
+    return (
+      <div className="grid h-full place-items-center text-sm text-muted">Preparing the bay…</div>
+    );
   }
   return (
     <StageBoundary>
       <Canvas
+        frameloop="demand"
+        shadows={highQuality ? "percentage" : false}
         camera={{ position: [12, 6.4, 9.4], fov: 32, near: 0.08, far: 400 }}
         dpr={[1, 1.6]}
-        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
+        gl={{
+          antialias: true,
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.05,
+        }}
         onPointerMissed={() => useTes.getState().setSelected("overview")}
       >
         <SceneInner stageRef={stageRef} />
@@ -87,6 +105,7 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
   const cache = useRef<{ unit?: THREE.Group; facility?: THREE.Group }>({});
   const active = useRef<THREE.Group | null>(null);
   const [ready, setReady] = useState(false);
+  const [loadError, setLoadError] = useState<Error | null>(null);
   const flying = useRef(true);
   const desired = useRef<Shot>(UNIT_SHOTS.iso);
   const controls = useThree((s) => s.controls) as {
@@ -99,6 +118,19 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
   } | null;
   const camera = useThree((s) => s.camera);
   const gl = useThree((s) => s.gl);
+  const invalidate = useThree((s) => s.invalidate);
+  const size = useThree((s) => s.size);
+
+  useEffect(() => {
+    if (!(camera instanceof THREE.PerspectiveCamera)) return;
+    const aspect = size.width / Math.max(1, size.height);
+    const halfFov = THREE.MathUtils.degToRad(32) / 2;
+    camera.fov = THREE.MathUtils.radToDeg(
+      2 * Math.atan(Math.tan(halfFov) * Math.max(1, 2.1 / aspect)),
+    );
+    camera.updateProjectionMatrix();
+    invalidate();
+  }, [camera, size, invalidate]);
 
   useEffect(() => {
     let dead = false;
@@ -109,25 +141,56 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
       cached.visible = true;
       active.current = cached;
       setReady(true);
+      gl.domElement.dataset.assetState = "ready";
+      gl.domElement.dataset.assetScene = sceneId;
       return;
     }
     setReady(false);
+    setLoadError(null);
+    gl.domElement.dataset.assetState = "loading";
     const load = sceneId === "facility" ? buildFacility() : buildReferenceModel();
-    load.then((group) => {
-      if (dead) {
-        disposeObject(group);
-        return;
-      }
-      cache.current[key] = group;
-      if (active.current && active.current !== group) active.current.visible = false;
-      group.visible = true;
-      active.current = group;
-      setReady(true);
-    });
+    load
+      .then((group) => {
+        if (dead) {
+          disposeObject(group);
+          return;
+        }
+        cache.current[key] = group;
+        if (active.current && active.current !== group) active.current.visible = false;
+        group.visible = true;
+        active.current = group;
+        setReady(true);
+        gl.domElement.dataset.assetState = "ready";
+        gl.domElement.dataset.assetScene = sceneId;
+      })
+      .catch((error: unknown) => {
+        if (!dead) {
+          gl.domElement.dataset.assetState = "failed";
+          setLoadError(error instanceof Error ? error : new Error("TES asset could not be loaded"));
+        }
+      });
     return () => {
       dead = true;
     };
-  }, [sceneId]);
+  }, [sceneId, gl]);
+
+  useEffect(() => {
+    gl.shadowMap.autoUpdate = false;
+    gl.shadowMap.needsUpdate = true;
+    invalidate();
+    return () => {
+      gl.shadowMap.autoUpdate = true;
+    };
+  }, [gl, ready, sceneId, shell, isolate, explode, flow, invalidate]);
+
+  useEffect(() => {
+    invalidate();
+  }, [selected, engineering, quality, invalidate]);
+
+  useEffect(() => {
+    if (spin) flying.current = false;
+    invalidate();
+  }, [spin, invalidate]);
 
   useEffect(() => {
     return () => {
@@ -140,9 +203,11 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
 
   useEffect(() => {
     flying.current = true;
+    gl.domElement.dataset.cameraState = "moving";
     const shots = sceneId === "facility" ? FACILITY_SHOTS : UNIT_SHOTS;
     desired.current = shots[view] || shots.iso;
-  }, [view, shotN, sceneId]);
+    invalidate();
+  }, [view, shotN, sceneId, gl, invalidate]);
 
   useEffect(() => {
     const el = gl.domElement;
@@ -165,31 +230,45 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
     return () => el.removeEventListener("pointerdown", onDown, true);
   }, [camera, controls, gl]);
 
-  useImperativeHandle(stageRef, () => ({
-    nudge(dir) {
-      if (!controls) return;
-      flying.current = false;
-      const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
-      const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
-      const step = Math.max(0.45, camera.position.distanceTo(controls.target) * 0.08);
-      const pan = new THREE.Vector3();
-      if (dir === "left") pan.addScaledVector(right, step);
-      if (dir === "right") pan.addScaledVector(right, -step);
-      if (dir === "up") pan.addScaledVector(up, -step);
-      if (dir === "down") pan.addScaledVector(up, step);
-      camera.position.add(pan);
-      controls.target.add(pan);
-      controls.update();
-      desired.current = { pos: camera.position.clone(), target: controls.target.clone() };
-      useTes.getState().setSpin(false);
-    },
-  }), [camera, controls, stageRef]);
+  useImperativeHandle(
+    stageRef,
+    () => ({
+      nudge(dir) {
+        if (!controls) return;
+        flying.current = false;
+        const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+        const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
+        const step = Math.max(0.45, camera.position.distanceTo(controls.target) * 0.08);
+        const pan = new THREE.Vector3();
+        if (dir === "left") pan.addScaledVector(right, step);
+        if (dir === "right") pan.addScaledVector(right, -step);
+        if (dir === "up") pan.addScaledVector(up, -step);
+        if (dir === "down") pan.addScaledVector(up, step);
+        camera.position.add(pan);
+        controls.target.add(pan);
+        controls.update();
+        invalidate();
+        desired.current = { pos: camera.position.clone(), target: controls.target.clone() };
+        useTes.getState().setSpin(false);
+      },
+    }),
+    [camera, controls, invalidate],
+  );
 
   useFrame(({ clock }, delta) => {
+    if (spin || flow !== "off") invalidate();
     if (controls) controls.autoRotate = spin && !flying.current;
     const pack = active.current;
     if (pack) {
-      applyPresentation(pack, { shell, isolate, flow, explode, selected, engineering, pulse: clock.elapsedTime });
+      applyPresentation(pack, {
+        shell,
+        isolate,
+        flow,
+        explode,
+        selected,
+        engineering,
+        pulse: clock.elapsedTime,
+      });
     }
     if (!controls || !flying.current || spin) return;
     const t = 1 - Math.pow(0.0015, Math.min(delta, 0.05));
@@ -197,12 +276,19 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
     controls.target.lerp(desired.current.target, Math.min(1, t * 2.2));
     controls.update();
     if (camera.position.distanceTo(desired.current.pos) < 0.05) flying.current = false;
+    gl.domElement.dataset.cameraState = flying.current ? "moving" : "ready";
+    if (flying.current) invalidate();
   });
 
   const pick = (event: { stopPropagation: () => void; object: THREE.Object3D }) => {
     event.stopPropagation();
     let node: THREE.Object3D | null = event.object;
     while (node) {
+      const component = node.userData.component_part as string | undefined;
+      if (component && component in PARTS) {
+        setSelected(component as PartId);
+        return;
+      }
       const part = node.userData.part as string | undefined;
       if (part && part in PARTS) {
         setSelected(part as PartId);
@@ -218,25 +304,65 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
 
   const isFacility = sceneId === "facility";
   const ground = isFacility ? 60 : 22;
+  if (loadError) throw loadError;
 
   return (
     <>
       <color attach="background" args={["#9eb0c0"]} />
       <hemisphereLight args={["#d5e4f2", "#6a5848", 0.55]} />
       <ambientLight intensity={0.25} />
-      <directionalLight position={[-8, 14, 8]} intensity={quality === "high" ? 2.4 : 1.6} castShadow={quality === "high"} />
+      <directionalLight
+        position={[-8, 14, 8]}
+        intensity={quality === "high" ? 2.1 : 1.6}
+        castShadow={quality === "high"}
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-left={isFacility ? -34 : -10}
+        shadow-camera-right={isFacility ? 34 : 10}
+        shadow-camera-top={isFacility ? 34 : 10}
+        shadow-camera-bottom={isFacility ? -34 : -10}
+        shadow-camera-far={100}
+        shadow-normalBias={0.035}
+      />
       <directionalLight position={[6, 6, -8]} intensity={0.45} color="#ffd7bf" />
-      <Environment files="/hdri/warehouse.hdr" environmentIntensity={quality === "high" ? 1.15 : 0.75} background={false} />
-      {ready && cache.current.unit ? <primitive object={cache.current.unit} onClick={pick} visible={sceneId === "unit"} /> : null}
-      {ready && cache.current.facility ? <primitive object={cache.current.facility} onClick={pick} visible={sceneId === "facility"} /> : null}
+      <Environment
+        files="/hdri/warehouse.hdr"
+        environmentIntensity={quality === "high" ? 1.15 : 0.75}
+        background={false}
+      />
+      {ready && cache.current.unit ? (
+        <primitive object={cache.current.unit} onClick={pick} visible={sceneId === "unit"} />
+      ) : null}
+      {ready && cache.current.facility ? (
+        <primitive
+          object={cache.current.facility}
+          onClick={pick}
+          visible={sceneId === "facility"}
+        />
+      ) : null}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
         <circleGeometry args={[ground, 64]} />
         <meshStandardMaterial color="#c5ced6" roughness={0.92} metalness={0.04} />
       </mesh>
       {quality === "high" ? (
-        <ContactShadows position={[0, 0, 0]} opacity={0.35} scale={ground * 1.4} blur={2.4} far={8} />
+        <ContactShadows
+          key={`${sceneId}-${ready}-${shell}-${isolate}-${explode}`}
+          frames={1}
+          position={[0, 0, 0]}
+          opacity={0.35}
+          scale={ground * 1.4}
+          blur={2.4}
+          far={8}
+        />
       ) : null}
-      <OrbitControls makeDefault enableDamping dampingFactor={0.08} screenSpacePanning maxPolarAngle={Math.PI / 2.05} minDistance={1.2} maxDistance={isFacility ? 120 : 80} />
+      <OrbitControls
+        makeDefault
+        enableDamping
+        dampingFactor={0.08}
+        screenSpacePanning
+        maxPolarAngle={Math.PI / 2.05}
+        minDistance={1.2}
+        maxDistance={isFacility ? 120 : 80}
+      />
     </>
   );
 }
