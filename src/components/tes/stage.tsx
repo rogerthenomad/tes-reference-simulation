@@ -4,6 +4,7 @@ import {
   Component,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -40,6 +41,41 @@ const FACILITY_SHOTS: Record<string, Shot> = {
 
 function shot(pos: [number, number, number], target: [number, number, number]): Shot {
   return { pos: new THREE.Vector3(...pos), target: new THREE.Vector3(...target) };
+}
+
+function concreteTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 512;
+  const context = canvas.getContext("2d")!;
+  const pixels = context.createImageData(512, 512);
+  let seed = 318701;
+  const random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
+  for (let y = 0; y < 512; y++) {
+    for (let x = 0; x < 512; x++) {
+      const variation = (random() - 0.5) * 15 + Math.sin(x * 0.029) * 2 + Math.sin(y * 0.042) * 2;
+      const index = (y * 512 + x) * 4;
+      pixels.data[index] = 159 + variation;
+      pixels.data[index + 1] = 155 + variation;
+      pixels.data[index + 2] = 145 + variation;
+      pixels.data[index + 3] = 255;
+    }
+  }
+  context.putImageData(pixels, 0, 0);
+  context.strokeStyle = "rgba(77, 75, 67, 0.085)";
+  context.lineWidth = 1;
+  for (const at of [0, 256, 511]) {
+    context.beginPath();
+    context.moveTo(at, 0);
+    context.lineTo(at, 512);
+    context.moveTo(0, at);
+    context.lineTo(512, at);
+    context.stroke();
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.anisotropy = 4;
+  return texture;
 }
 
 class StageBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
@@ -122,6 +158,8 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
   const gl = useThree((s) => s.gl);
   const invalidate = useThree((s) => s.invalidate);
   const size = useThree((s) => s.size);
+  const groundTexture = useMemo(concreteTexture, []);
+  useEffect(() => () => groundTexture.dispose(), [groundTexture]);
 
   useEffect(() => {
     if (!(camera instanceof THREE.PerspectiveCamera)) return;
@@ -306,6 +344,8 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
 
   const isFacility = sceneId === "facility";
   const ground = isFacility ? 60 : 22;
+  groundTexture.repeat.set(isFacility ? 7 : 3, isFacility ? 7 : 3);
+  groundTexture.needsUpdate = true;
   if (loadError) throw loadError;
 
   return (
@@ -345,7 +385,7 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
       {ready && flow !== "off" ? <FlowPaths scene={sceneId} flow={flow} running={running} /> : null}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
         <circleGeometry args={[ground, 64]} />
-        <meshStandardMaterial color="#c5ced6" roughness={0.92} metalness={0.04} />
+        <meshStandardMaterial map={groundTexture} roughness={0.96} metalness={0.02} />
       </mesh>
       {quality === "high" ? (
         <ContactShadows
