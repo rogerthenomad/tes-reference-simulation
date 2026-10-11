@@ -38,6 +38,7 @@ export async function buildFacility() {
     mesh.receiveShadow = true;
     mesh.userData.part = part;
     hall.add(mesh);
+    return mesh;
   };
 
   add("facility", new THREE.Mesh(new THREE.BoxGeometry(52, 0.12, 46), floor), [2, -0.06, 0]);
@@ -47,7 +48,19 @@ export async function buildFacility() {
     add("facility", new THREE.Mesh(new THREE.BoxGeometry(0.28, 7.2, 0.28), steel), [x, 3.6, 22]);
     add("facility", new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 44.4), steel), [x, 7.1, 0]);
   }
-  add("facility", new THREE.Mesh(new THREE.BoxGeometry(48, 0.18, 44), white), [2, 7.35, 0]);
+
+  // Named roof so Cutaway / Closed toggles it on mobile and desktop.
+  const roof = new THREE.Group();
+  roof.name = "roof";
+  roof.userData.part = "roof";
+  const roofPanel = new THREE.Mesh(new THREE.BoxGeometry(48, 0.18, 44), white.clone());
+  roofPanel.position.set(2, 7.35, 0);
+  roofPanel.userData.part = "roof";
+  roofPanel.castShadow = true;
+  roofPanel.receiveShadow = true;
+  roof.add(roofPanel);
+  root.add(roof);
+
   add("facility", new THREE.Mesh(new THREE.BoxGeometry(48, 1.4, 0.18), white), [2, 6.2, 22.2]);
   add("facility", new THREE.Mesh(new THREE.BoxGeometry(6.4, 1.1, 0.06), blue), [2, 6.35, 22.32]);
 
