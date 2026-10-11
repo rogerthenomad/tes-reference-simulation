@@ -6,6 +6,8 @@ dist
 .nitro
 *.log
 .DS_Store
+*.blend1
+*.blend2
 screenshots
 artifacts
 .grok

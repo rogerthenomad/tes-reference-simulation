@@ -1,0 +1,21 @@
+{
+  "source_sha256": "b8c94f6d864500f2c465b14c3b024942fe6290091740fd4060e86059998553bc",
+  "unit_objects": 3529,
+  "unit_web_meshes": 148,
+  "facility_rows": 10,
+  "hubs_per_row": 4,
+  "blender_version": "5.2.2 LTS",
+  "uncompressed_files": {
+    "tes-unit.glb": 21768452,
+    "facility.glb": 40535664,
+    "TES_Industrial_Unit.blend": 1514056,
+    "TES_Industrial_Facility_10_Rows.blend": 7815425
+  },
+  "files": {
+    "public/tes-unit.glb": 4858952,
+    "public/facility.glb": 9629824,
+    "attachments/TES_Industrial_Unit.blend": 1514056,
+    "attachments/TES_Industrial_Facility_10_Rows.blend": 7815425
+  },
+  "compression": "Meshopt; positions 16-bit, normals/tangents 12-bit; repeated UVs retained"
+}
