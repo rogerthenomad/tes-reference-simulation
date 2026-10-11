@@ -14,6 +14,12 @@ export type PartId =
   | "hub-2"
   | "hub-3"
   | "hub-4"
+  | "hub-5"
+  | "hub-6"
+  | "hub-7"
+  | "hub-8"
+  | "hub-9"
+  | "hub-10"
   | "ecr"
   | "fuel-cell"
   | "trim-front"
@@ -61,6 +67,12 @@ export const PARTS: Record<PartId, PartInfo> = {
   "hub-2": line("hub-2", "Hub 2", "Each independently managed hub contains an ECR and Fuel Cell.", "process"),
   "hub-3": line("hub-3", "Hub 3", "Each independently managed hub contains an ECR and Fuel Cell.", "process"),
   "hub-4": line("hub-4", "Hub 4", "Each independently managed hub contains an ECR and Fuel Cell.", "process"),
+  "hub-5": line("hub-5", "Hub 5", "Facility hub containing an ECR and fuel cell.", "process"),
+  "hub-6": line("hub-6", "Hub 6", "Facility hub containing an ECR and fuel cell.", "process"),
+  "hub-7": line("hub-7", "Hub 7", "Facility hub containing an ECR and fuel cell.", "process"),
+  "hub-8": line("hub-8", "Hub 8", "Facility hub containing an ECR and fuel cell.", "process"),
+  "hub-9": line("hub-9", "Hub 9", "Facility hub containing an ECR and fuel cell.", "process"),
+  "hub-10": line("hub-10", "Hub 10", "Facility hub containing an ECR and fuel cell.", "process"),
   ecr: line("ecr", "ECR", "Electrochemical Reactor. Converts stored electrolyte into TES aqueous fuel.", "process"),
   "fuel-cell": line("fuel-cell", "Fuel Cell", "Receives liquid fuel and oxidizes it to generate electricity and recoverable water.", "process"),
   "trim-front": line("trim-front", "Trim Reservoir", "Stores fluid used to maintain fuel and electrolyte balance.", "process"),
@@ -80,19 +92,19 @@ export const PARTS: Record<PartId, PartInfo> = {
   anolyte: line("anolyte", "ECR", "Electrochemical Reactor. Converts stored electrolyte into TES aqueous fuel.", "engineering"),
   condenser: line("condenser", "Water Outlet Manifold", "Collects and routes recovered water.", "engineering"),
   "carbon-skid": line("carbon-skid", "Electrolyte Storage", "Stores electrolyte used to regenerate TES fuel.", "engineering"),
-  facility: line("facility", "TES Industrial Facility", "Ten open TES rows, scaled for site power, water, and operations.", "both"),
-  rows: line("rows", "Production rows", "Ten duplicated TES lines. Each row is the reference unit with the container removed.", "process"),
+  facility: line("facility", "TES Industrial Facility", "Ten production rows with ten ECR and fuel-cell hubs per TES, scaled for site power, water, and operations.", "both"),
+  rows: line("rows", "Production rows", "Ten open TES lines. Each facility TES has ten hubs, with an ECR and fuel cell in every hub.", "process"),
   "water-handling": line("water-handling", "Water storage and handling", "Collects and stores recovered water from the production rows.", "storage"),
   "power-collection": line("power-collection", "Power collection and conversion", "Gathers power from the rows and conditions it for the site.", "process"),
   operations: line("operations", "Facility operations", "Monitors and manages the facility from the control room.", "process"),
 };
 
 export const FLOW_PARTS: Record<Exclude<FlowId, "off">, PartId[]> = {
-  power: ["battery", "ems", "lights", "hub-1", "hub-2", "hub-3", "hub-4", "power-collection"],
+  power: ["battery", "ems", "lights", "hub-1", "hub-2", "hub-3", "hub-4", "hub-5", "hub-6", "hub-7", "hub-8", "hub-9", "hub-10", "power-collection"],
   water: ["water-front", "water-rear", "condenser", "piping", "water-handling"],
-  fuel: ["fuel", "piping", "hub-1", "hub-2", "hub-3", "hub-4", "trim-front", "fuel-cell"],
+  fuel: ["fuel", "piping", "hub-1", "hub-2", "hub-3", "hub-4", "hub-5", "hub-6", "hub-7", "hub-8", "hub-9", "hub-10", "trim-front", "fuel-cell"],
   carbon: ["electrolyte", "piping", "ecr"],
-  oxygen: ["oxygen", "hub-1", "hub-2", "hub-3", "hub-4"],
+  oxygen: ["oxygen", "hub-1", "hub-2", "hub-3", "hub-4", "hub-5", "hub-6", "hub-7", "hub-8", "hub-9", "hub-10"],
   thermal: ["thermal", "lights", "condenser"],
 };
 
@@ -106,6 +118,12 @@ export const PART_FLOW: Partial<Record<PartId, FlowId>> = {
   "hub-2": "fuel",
   "hub-3": "fuel",
   "hub-4": "fuel",
+  "hub-5": "fuel",
+  "hub-6": "fuel",
+  "hub-7": "fuel",
+  "hub-8": "fuel",
+  "hub-9": "fuel",
+  "hub-10": "fuel",
   ecr: "carbon",
   "water-front": "water",
   "water-rear": "water",
@@ -127,6 +145,12 @@ export const PROCESS_PARTS = new Set<string>([
   "hub-2",
   "hub-3",
   "hub-4",
+  "hub-5",
+  "hub-6",
+  "hub-7",
+  "hub-8",
+  "hub-9",
+  "hub-10",
   "trim-front",
   "battery",
   "ems",
@@ -202,6 +226,12 @@ export const DOES: Record<PartId, string> = {
   "hub-2": "Each independently managed hub contains an ECR and Fuel Cell.",
   "hub-3": "Each independently managed hub contains an ECR and Fuel Cell.",
   "hub-4": "Each independently managed hub contains an ECR and Fuel Cell.",
+  "hub-5": "Facility ECR and fuel-cell hub.",
+  "hub-6": "Facility ECR and fuel-cell hub.",
+  "hub-7": "Facility ECR and fuel-cell hub.",
+  "hub-8": "Facility ECR and fuel-cell hub.",
+  "hub-9": "Facility ECR and fuel-cell hub.",
+  "hub-10": "Facility ECR and fuel-cell hub.",
   ecr: "Electrochemical Reactor. Converts stored electrolyte into TES aqueous fuel.",
   "fuel-cell": "Receives liquid fuel and oxidizes it to generate electricity and recoverable water.",
   "trim-front": "Stores fluid used to maintain fuel and electrolyte balance.",
@@ -221,8 +251,8 @@ export const DOES: Record<PartId, string> = {
   anolyte: "Electrochemical Reactor. Converts stored electrolyte into TES aqueous fuel.",
   condenser: "Collects and routes recovered water.",
   "carbon-skid": "Stores electrolyte used to regenerate TES fuel.",
-  facility: "Ten open TES rows with water handling, power collection, and operations.",
-  rows: "Ten copies of the TES unit, open, without the container shell.",
+  facility: "Ten facility TES rows with ten hubs each, plus water handling, power collection, and operations.",
+  rows: "Ten open facility TES lines, each containing ten ECR and fuel-cell hubs.",
   "water-handling": "Stores and routes recovered water from the rows.",
   "power-collection": "Collects row output and converts it for site use.",
   operations: "The control room that monitors and manages the facility.",

@@ -18,44 +18,46 @@ const COLORS: Record<Exclude<FlowId, "off">, string> = {
 const HUBS = [-4.77, -2.99, -1.21, 0.57];
 
 /** Paths follow the exported TES pipe headers, manifolds and service connections. */
-function unitRoutes(flow: Exclude<FlowId, "off">): Route[] {
+function unitRoutes(flow: Exclude<FlowId, "off">, facility = false): Route[] {
+  const hubs = facility ? Array.from({ length: 10 }, (_, index) => -15.45 + index * 1.78) : HUBS;
+  const left = facility ? -16.2 : -5.35;
   switch (flow) {
     case "fuel":
       return [
-        [[1.2, 0.95, -0.9], [1.2, 2.98, -0.9], [1.2, 3.28, 0.82], [-5.35, 3.28, 0.82]],
-        ...HUBS.map((x): Route => [[x, 3.28, 0.82], [x, 2.18, 0.82], [x, 1.25, 0.82]]),
+        [[1.2, 0.95, -0.9], [1.2, 2.98, -0.9], [1.2, 3.28, 0.82], [left, 3.28, 0.82]],
+        ...hubs.map((x): Route => [[x, 3.28, 0.82], [x, 2.18, 0.82], [x, 1.25, 0.82]]),
       ];
     case "carbon":
       return [
-        [[1.24, 2.58, -0.92], [1.24, 3.38, -0.92], [-5.3, 3.38, -0.92]],
-        ...HUBS.map((x): Route => [[x, 3.38, -0.92], [x, 2.45, -0.65], [x, 2.35, 0.75]]),
+        [[1.24, 2.58, -0.92], [1.24, 3.38, -0.92], [left, 3.38, -0.92]],
+        ...hubs.map((x): Route => [[x, 3.38, -0.92], [x, 2.45, -0.65], [x, 2.35, 0.75]]),
       ];
     case "water":
       return [
-        [[-5.65, 0.66, 1.1], [5.62, 0.66, 1.1]],
-        ...HUBS.map((x): Route => [[x, 1.12, 0.92], [x, 0.66, 1.1]]),
-        [[-5.65, 0.66, -1.1], [2.1, 0.66, -1.1]],
+        [[left, 0.66, 1.1], [5.62, 0.66, 1.1]],
+        ...hubs.map((x): Route => [[x, 1.12, 0.92], [x, 0.66, 1.1]]),
+        [[left, 0.66, -1.1], [2.1, 0.66, -1.1]],
       ];
     case "power":
       return [
-        [[-5.25, 3.45, 0.59], [3.64, 3.45, 0.59], [3.64, 2.7, 0.82], [5.03, 2.7, 0.82]],
-        ...HUBS.map((x): Route => [[x, 1.18, 0.89], [x, 3.45, 0.59]]),
+        [[left, 3.45, 0.59], [3.64, 3.45, 0.59], [3.64, 2.7, 0.82], [5.03, 2.7, 0.82]],
+        ...hubs.map((x): Route => [[x, 1.18, 0.89], [x, 3.45, 0.59]]),
       ];
     case "oxygen":
       return [
-        [[5.32, 3.38, -0.3], [-5.3, 3.38, -0.3]],
-        ...HUBS.map((x): Route => [[x, 3.38, -0.3], [x, 1.34, 0.71]]),
+        [[5.32, 3.38, -0.3], [left, 3.38, -0.3]],
+        ...hubs.map((x): Route => [[x, 3.38, -0.3], [x, 1.34, 0.71]]),
       ];
     case "thermal":
       return [
-        [[-5.36, 2.88, -0.65], [5.42, 2.88, -0.65]],
-        ...HUBS.map((x): Route => [[x, 1.33, 0.7], [x, 2.88, -0.65]]),
+        [[left, 2.88, -0.65], [5.42, 2.88, -0.65]],
+        ...hubs.map((x): Route => [[x, 1.33, 0.7], [x, 2.88, -0.65]]),
       ];
   }
 }
 
 function routes(scene: SceneId, flow: Exclude<FlowId, "off">): Route[] {
-  const unit = unitRoutes(flow);
+  const unit = unitRoutes(flow, scene === "facility");
   if (scene === "unit") return unit;
   const rows = Array.from({ length: 10 }, (_, index) => -18 + index * 3.6);
   const translated = rows.flatMap((z) =>

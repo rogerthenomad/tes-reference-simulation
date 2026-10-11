@@ -5,7 +5,7 @@ The viewer now loads evaluated Blender geometry instead of reconstructing the eq
 ## Editable assets
 
 - `attachments/TES_Industrial_Unit.blend`: the original TES unit, with fabrication and connection detail added.
-- `attachments/TES_Industrial_Facility_10_Rows.blend`: the repository's ten-row facility, using four existing TES hubs per row, with water handling, electrical cabinets, operations, structural steel, and anchored row skids.
+- `attachments/TES_Industrial_Facility_10_Rows.blend`: the ten-row facility, with ten ECR and fuel-cell hubs per TES row (100 facility hubs), water handling, electrical cabinets, operations, structural steel, and anchored row skids. The standalone TES unit keeps its four-hub layout.
 - `attachments/TES_Reference_Model.blend`: preserved original source.
 
 The native files contain packed steel/paint normal and roughness maps. The upgraded materials distinguish stainless steel, galvanized frames, coated steel, rubber seals, brass fittings, and bright fasteners. Added assemblies include hollow flange pairs, gasket seams, studs with washers and hex heads, isolation valves, dial gauges, pipe clamps, skid anchors, cabinet hinges/vents/glands, and protected conduit.
@@ -36,12 +36,15 @@ Compress the web exports using glTF Transform 4.5.1:
 
 ```sh
 npx --yes @gltf-transform/cli@4.5.1 meshopt public/tes-unit.glb artifacts/industrial/tes-unit-optimized.glb --quantize-position 16 --quantize-normal 12 --quantize-texcoord 16
-npx --yes @gltf-transform/cli@4.5.1 meshopt public/facility.glb artifacts/industrial/facility-optimized.glb --quantize-position 16 --quantize-normal 12 --quantize-texcoord 16
+npx --yes @gltf-transform/cli@4.5.1 meshopt public/facility.glb artifacts/industrial/facility-first-pass.glb --quantize-position 16 --quantize-normal 12 --quantize-texcoord 16
+npx --yes @gltf-transform/cli@4.5.1 meshopt artifacts/industrial/facility-first-pass.glb artifacts/industrial/facility-quantized.glb --quantize-position 14 --quantize-normal 10 --quantize-texcoord 12
+npx --yes @gltf-transform/cli@4.5.1 simplify artifacts/industrial/facility-quantized.glb artifacts/industrial/facility-simplified.glb --ratio 0.9 --error 0.001
+npx --yes @gltf-transform/cli@4.5.1 meshopt artifacts/industrial/facility-simplified.glb artifacts/industrial/facility-optimized.glb --quantize-position 14 --quantize-normal 10 --quantize-texcoord 12
 cp artifacts/industrial/tes-unit-optimized.glb public/tes-unit.glb
 cp artifacts/industrial/facility-optimized.glb public/facility.glb
 ```
 
-The viewer includes the Meshopt decoder. Exports retain selectable part metadata, smooth/hard normals, tangents, image maps, and UVs. Unit meshes are evaluated and grouped by part/material; facility rows reference the same mesh data. UV coordinates intentionally repeat outside the unit square, so the compressor leaves those UVs at full precision.
+The viewer includes the Meshopt decoder. Exports retain selectable part metadata, smooth/hard normals, tangents, image maps, and UVs. Unit meshes are evaluated and grouped by part/material; facility rows reference the same mesh data. UV coordinates intentionally repeat outside the unit square, so the compressor leaves those UVs at full precision. The facility is simplified within a 0.1% error threshold for its larger 100-hub scene.
 
 ## Verify
 

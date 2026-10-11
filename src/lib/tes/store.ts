@@ -57,7 +57,7 @@ export const useTes = create<TesState>((set) => ({
       selected: "overview",
       view: "iso",
       explode: 0,
-      shell: scene === "facility" ? "closed" : "open",
+      shell: "open",
       shot: Date.now(),
     }),
   setView: (view) => set((s) => ({ view, shot: s.shot + 1 })),

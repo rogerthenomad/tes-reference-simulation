@@ -52,7 +52,7 @@ test("unit export contains selectable TES components and embedded steel textures
 
 test("facility retains ten complete rows and reuses the unit mesh data", () => {
   const { bytes, json } = readAsset("facility.glb");
-  assert.ok(bytes.length < 12_000_000, "facility download budget");
+  assert.ok(bytes.length < 20_000_000, "facility download budget");
   const rows = json.nodes.filter((node) => node.extras?.row_index);
   assert.equal(rows.length, 10);
   assert.deepEqual(
@@ -61,7 +61,7 @@ test("facility retains ten complete rows and reuses the unit mesh data", () => {
   );
   for (const row of rows) {
     const parts = new Set(row.children.map((index) => json.nodes[index].extras?.component_part));
-    for (const part of ["hub-1", "hub-2", "hub-3", "hub-4", "battery", "ems"])
+    for (const part of [...Array.from({ length: 10 }, (_, index) => `hub-${index + 1}`), "battery", "ems"])
       assert.ok(parts.has(part));
     assert.ok(!parts.has("shell") && !parts.has("roof"), "rows are open equipment assemblies");
   }

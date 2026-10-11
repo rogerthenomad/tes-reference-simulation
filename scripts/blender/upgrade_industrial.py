@@ -434,10 +434,14 @@ FAC=bpy.data.scenes.new('TES - Industrial Facility - 10 Rows');SCENE=FAC
 bpy.context.window.scene=FAC
 FAC.unit_settings.system='METRIC'
 FAC['production_rows']=10
-FAC['hubs_per_row']=4
-FAC['layout_basis']='Repository ten-row arrangement; existing TES dimensions, water tank, electrical cabinets and operations footprint retained.'
+FAC['hubs_per_row']=10
+FAC['layout_basis']='Ten facility TES rows with ten ECR/DFFC hub assemblies each; standalone TES retains four hubs.'
 FAC['visual_scope']='Illustrative mechanical visualization, not validated process engineering.'
 rows=collection('FAC 01 - Ten Production Rows')
+HUB_SHIFT=-10.68
+EXTRA_HUBS={number:-15.45+(number-1)*1.78 for number in range(5,11)}
+hub_template=[o for o in unit_objects if o.get('part')=='hub-1']
+CURRENT=rows;PART='rows'
 for i in range(10):
     y=18-i*3.6
     row=bpy.data.objects.new('TES_Row_%02d'%(i+1),None);row['part']='rows';row['row_index']=i+1;rows.objects.link(row)
@@ -446,25 +450,47 @@ for i in range(10):
         if src.get('part') in ['shell','roof','lights']:continue
         o=src.copy();o.data=src.data;o.parent=row;rows.objects.link(o);o['part']='rows'
         o['component_part']=src.get('part')
+        if src.get('part') in {'hub-1','hub-2','hub-3','hub-4'}:
+            o.location.x+=HUB_SHIFT
+    for number,x in EXTRA_HUBS.items():
+        for src in hub_template:
+            o=src.copy();o.data=src.data;o.parent=row;rows.objects.link(o);o['part']='rows'
+            o['component_part']='hub-'+str(number)
+            o.location.x+=x-(-4.77)
+        # A fabricated identity plate replaces the copied Hub 1 marking.
+        plate=box('Facility_HUB_%02d_identity_plate'%number,(x,y-1.19,3.24),(.74,.036,.24),DARK,.003)
+        plate['component_part']='hub-'+str(number)
+        font=bpy.data.curves.new('HUB_%02d_text'%number,'FONT');font.body='HUB %d'%number
+        font.size=.145;font.align_x='CENTER';font.align_y='CENTER';font.extrude=.001
+        font.materials.append(WHITE)
+        label=put(bpy.data.objects.new('Facility_HUB_%02d_label'%number,font),'rows')
+        label['component_part']='hub-'+str(number)
+        label.location=(x,y-1.214,3.24);label.rotation_euler.x=math.pi/2
 CURRENT=collection('FAC 02 - Mechanical Infrastructure');PART='rows'
 for i in range(10):
     y=18-i*3.6
-    box('Row_skid_deck',(0,y,.20),(12.1,2.3,.12),GALV,.012)
-    for x in [-5.7,0,5.7]:
+    box('Row_skid_deck',(-5.34,y,.20),(23.0,2.3,.12),GALV,.012)
+    for x in [-16.3,-10.6,-4.9,.8,5.7]:
         box('Row_skid_crossmember',(x,y,.105),(.18,2.3,.09),GALV)
         for dy in [-.90,.90]:
             box('Row_skid_anchor_pad',(x,y+dy,.03),(.36,.36,.06),GALV)
             bolt('Row_skid_anchor',(x+.10,y+dy,.07),(0,0,1),.021,.08)
-    for sign in [-1,1]:
+    for x,entry in [(-18.6,-15.8),(7.6,5.25)]:
         # Headers now join each row to continuous side collectors.
-        pipe('Row_branch',[(sign*5.25,y-1.09,.48),(sign*6.35,y-1.09,.48),(sign*6.35,y,1.1),(sign*7.6,y,1.1)],.065)
-        flange('Row_branch_flange',(sign*7.15,y,1.1),(1,0,0),.15,.065)
-        box('Collector_support',(sign*7.6,y,.55),(.11,.11,1.1),GALV)
-        clamp('Collector_clamp',(sign*7.6,y,1.1),(0,1,0),.105)
+        elbow=x-.8
+        pipe('Row_branch',[(entry,y-1.09,.48),(elbow,y-1.09,.48),(elbow,y,1.1),(x,y,1.1)],.065)
+        flange('Row_branch_flange',((elbow+x)/2,y,1.1),(1,0,0),.15,.065)
+        box('Collector_support',(x,y,.55),(.11,.11,1.1),GALV)
+        clamp('Collector_clamp',(x,y,1.1),(0,1,0),.105)
     gauge('Row_pressure',(7.15,y,1.32),.09)
-for sign in [-1,1]:
-    pipe('Continuous_row_collector',[(sign*7.6,18,1.1),(sign*7.6,-14.4,1.1)],.105)
-    for y in [16,8,0,-8]:flange('Collector_service_joint',(sign*7.6,y,1.1),(0,1,0),.22,.105)
+    for z,mat in [(3.515,BLUE),(3.42,ORANGE)]:
+        pipe('Extended_ten_hub_process_header',[(-16.2,y-.98,z),(-4.4,y-.98,z)],.032,mat)
+        for x in [-15.45,-13.67,-11.89,-10.11,-8.33,-6.55]:
+            pipe('Hub_header_drop',[(x,y-.98,z),(x,y-1.1,3.19)],.023,mat)
+            clamp('Hub_header_support',(x,y-.98,z),(1,0,0),.032)
+for x in [-18.6,7.6]:
+    pipe('Continuous_row_collector',[(x,18,1.1),(x,-14.4,1.1)],.105)
+    for y in [16,8,0,-8]:flange('Collector_service_joint',(x,y,1.1),(0,1,0),.22,.105)
 
 CURRENT=collection('FAC 03 - Structural Hall');PART='facility'
 box('Facility_floor',(2,0,-.06),(52,46,.12),CONCRETE,0)
@@ -490,7 +516,7 @@ PART='facility'
 for y in [-16,-8,0,8,16]:
     box('Luminaire_housing',(2,y,6.92),(1.5,.42,.08),DARK)
     box('Luminaire_diffuser',(2,y,6.87),(1.35,.33,.012),bpy.data.materials['Warm white inspection lamps'],0)
-for x in [-7,7]:
+for x in [-19.5,7]:
     for y in [18-i*1.8 for i in range(21)]:
         cyl('Safety_rail_post',(x,y,.05),(x,y,1.1),.035,YELLOW,16)
         box('Safety_rail_foot',(x,y,.03),(.18,.18,.06),GALV)
@@ -589,13 +615,15 @@ for i in range(10):
     for src in web_unit:
         if src.get('part') in ['shell','roof','lights']:continue
         o=src.copy();o.data=src.data;o.parent=row;fac_web_col.objects.link(o);o['component_part']=src.get('component_part',src['part']);o['part']='rows'
+        if src.get('part') in {'hub-1','hub-2','hub-3','hub-4'}:o.location.x+=HUB_SHIFT
+    for number,x in EXTRA_HUBS.items():
+        for src in web_unit:
+            if src.get('part')!='hub-1':continue
+            o=src.copy();o.data=src.data;o.parent=row;fac_web_col.objects.link(o)
+            o['component_part']=src.get('component_part') if src.get('component_part') in {'ecr','fuel-cell'} else 'hub-'+str(number)
+            o['part']='rows';o.location.x+=x-(-4.77)
 export_scene(fac_web_scene,PUBLIC/'facility.glb')
 
-report={'source_sha256':hashlib.sha256((ROOT/'attachments/TES_Reference_Model.blend').read_bytes()).hexdigest(),
-        'unit_objects':len(unit_objects),'unit_web_meshes':len(web_unit),'facility_rows':10,'hubs_per_row':4,
-        'blender_version':bpy.app.version_string,'files':{p.name:p.stat().st_size for p in [PUBLIC/'tes-unit.glb',PUBLIC/'facility.glb',ROOT/'attachments/TES_Industrial_Unit.blend',ROOT/'attachments/TES_Industrial_Facility_10_Rows.blend']}}
-(ROOT/'scripts/blender/asset-report.json').write_text(json.dumps(report,indent=2)+'\n')
-print('ASSET_REPORT',json.dumps(report),flush=True)
 if ARGS.render:
     bpy.context.window.scene=UNIT;SCENE=UNIT;CURRENT=collection('91_Industrial_Render_Lighting',UNIT);lighting(UNIT)
     UNIT.camera=camera('CAM_Industrial_Unit',(14,-18,9),(0,0,1.7),48)
@@ -610,14 +638,16 @@ if ARGS.render:
     FAC.render.filepath=str(OUT/'TES_Facility_Industrial.png');bpy.ops.render.render(write_still=True)
     FAC.camera=detail_camera;FAC.render.resolution_x=1600;FAC.render.resolution_y=1000
     FAC.render.filepath=str(OUT/'TES_Facility_Detail.png');bpy.ops.render.render(write_still=True)
-# The standalone unit is saved separately. Keep the facility native file focused
-# on its editable production scene rather than packaging duplicate export scenes.
+# Keep the native delivery focused on the editable facility. The unit master
+# and temporary web export have their own outputs and need not inflate it.
 for unused in list(bpy.data.scenes):
-    if unused != FAC:
-        bpy.data.scenes.remove(unused)
-bpy.context.window.scene = FAC
-bpy.ops.outliner.orphans_purge(do_recursive=True)
+    if unused != FAC:bpy.data.scenes.remove(unused)
+bpy.context.window.scene=FAC
+for _ in range(3):bpy.ops.outliner.orphans_purge(do_recursive=False)
 bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'attachments/TES_Industrial_Facility_10_Rows.blend'),compress=True)
-report['files']['TES_Industrial_Facility_10_Rows.blend']=(ROOT/'attachments/TES_Industrial_Facility_10_Rows.blend').stat().st_size
+report={'source_sha256':hashlib.sha256((ROOT/'attachments/TES_Reference_Model.blend').read_bytes()).hexdigest(),
+        'unit_objects':len(unit_objects),'unit_web_meshes':len(web_unit),'facility_rows':10,'hubs_per_row':10,
+        'blender_version':bpy.app.version_string,'files':{p.name:p.stat().st_size for p in [PUBLIC/'tes-unit.glb',PUBLIC/'facility.glb',ROOT/'attachments/TES_Industrial_Unit.blend',ROOT/'attachments/TES_Industrial_Facility_10_Rows.blend']}}
 (ROOT/'scripts/blender/asset-report.json').write_text(json.dumps(report,indent=2)+'\n')
+print('ASSET_REPORT',json.dumps(report),flush=True)
 print('INDUSTRIAL_BUILD_COMPLETE',flush=True)
