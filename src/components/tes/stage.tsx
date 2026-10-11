@@ -33,6 +33,16 @@ function shot(pos: [number, number, number], target: [number, number, number]): 
   return { pos: new THREE.Vector3(...pos), target: new THREE.Vector3(...target) };
 }
 
+const cache = new Map<string, THREE.Group>();
+
+async function getModel(id: string) {
+  const hit = cache.get(id);
+  if (hit) return hit;
+  const built = id === "facility" ? await buildFacility() : await buildReferenceModel();
+  cache.set(id, built);
+  return built;
+}
+
 class StageBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() {
@@ -102,23 +112,20 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
 
   useEffect(() => {
     let dead = false;
+    const cached = cache.get(sceneId);
+    if (cached) {
+      models.current = cached;
+      setReady(true);
+      return;
+    }
     setReady(false);
-    const load = sceneId === "facility" ? buildFacility() : buildReferenceModel();
-    load.then((group) => {
-      if (dead) {
-        disposeObject(group);
-        return;
-      }
-      if (models.current) disposeObject(models.current);
+    getModel(sceneId).then((group) => {
+      if (dead) return;
       models.current = group;
       setReady(true);
     });
     return () => {
       dead = true;
-      if (models.current) {
-        disposeObject(models.current);
-        models.current = null;
-      }
     };
   }, [sceneId]);
 
