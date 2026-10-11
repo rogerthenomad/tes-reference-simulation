@@ -11,6 +11,7 @@ import collections
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import sys
 
@@ -441,14 +442,65 @@ rows=collection('FAC 01 - Ten Production Rows')
 HUB_SHIFT=-10.68
 EXTRA_HUBS={number:-15.45+(number-1)*1.78 for number in range(5,11)}
 hub_template=[o for o in unit_objects if o.get('part')=='hub-1']
+FACILITY_HUB_X=[-15.45+i*1.78 for i in range(10)]
+TANK_LEFT=FACILITY_HUB_X[0]-.89
+TANK_RIGHT=FACILITY_HUB_X[-1]+.89
+# The original tank bodies span -2.995..5.475 m. Facility vessels now span
+# the outside edges of the ten 1.78 m hub bays, while individual fasteners,
+# ports and labels retain their fabricated size.
+SOURCE_TANK_LEFT=1.24-8.47/2
+SOURCE_TANK_RIGHT=1.24+8.47/2
+TANK_SCALE=(TANK_RIGHT-TANK_LEFT)/(SOURCE_TANK_RIGHT-SOURCE_TANK_LEFT)
+storage_meshes={}
+
+
+def tank_x(x):
+    return TANK_LEFT+(x-SOURCE_TANK_LEFT)*TANK_SCALE
+
+
+def facility_storage_copy(src, obj):
+    if src.get('part') not in {'fuel','electrolyte','tank-frame'}:
+        return True
+    n=src.name
+    # Replace the old five short supports and irregular seams with supports
+    # and panel breaks at every one of the ten full-width bay positions.
+    if n.startswith(('Fuel_support','Electrolyte_support','Fuel_lower_standoff',
+                     'Electrolyte_lower_standoff','Rear_tank_support_tie',
+                     'Fuel_panel_seam','Electrolyte_panel_seam','Storage_fabrication_seam')):
+        return False
+    points=[src.matrix_world @ Vector(v) for v in src.bound_box]
+    center_x=(min(v.x for v in points)+max(v.x for v in points))/2
+    if n.startswith(('REAR_Fuel_Tank','REAR_Electrolyte_Tank',
+                     'Fuel_face_edge','Electrolyte_face_edge')):
+        # The shell and continuous welded edge are the only lengthened parts.
+        # Transform their vertices in source world coordinates to keep bevels
+        # and tank end geometry aligned without enlarging ports or fasteners.
+        if src.data.name not in storage_meshes:
+            mesh=src.data.copy()
+            inverse=src.matrix_world.inverted()
+            for v in mesh.vertices:
+                world=src.matrix_world @ v.co
+                world.x=tank_x(world.x)
+                v.co=inverse @ world
+            storage_meshes[src.data.name]=mesh
+        obj.data=storage_meshes[src.data.name]
+    else:
+        obj.location.x+=tank_x(center_x)-center_x
+    return True
+
 CURRENT=rows;PART='rows'
+facility_rows=[]
 for i in range(10):
     y=18-i*3.6
     row=bpy.data.objects.new('TES_Row_%02d'%(i+1),None);row['part']='rows';row['row_index']=i+1;rows.objects.link(row)
+    row['tank_length_m']=round(TANK_RIGHT-TANK_LEFT,2)
+    facility_rows.append(row)
     row.location=(0,y,0)
     for src in unit_objects:
         if src.get('part') in ['shell','roof','lights']:continue
-        o=src.copy();o.data=src.data;o.parent=row;rows.objects.link(o);o['part']='rows'
+        o=src.copy();o.data=src.data
+        if not facility_storage_copy(src,o):continue
+        o.parent=row;rows.objects.link(o);o['part']='rows'
         o['component_part']=src.get('part')
         if src.get('part') in {'hub-1','hub-2','hub-3','hub-4'}:
             o.location.x+=HUB_SHIFT
@@ -469,6 +521,17 @@ for i in range(10):
 CURRENT=collection('FAC 02 - Mechanical Infrastructure');PART='rows'
 for i in range(10):
     y=18-i*3.6
+    for x in FACILITY_HUB_X:
+        for name,z,saddle_z in [('Fuel',.99,.28),('Electrolyte',2.57,1.86)]:
+            support=box('Facility_'+name+'_bay_saddle',(x,y+.62,saddle_z),(.13,.95,.20),GALV,.008)
+            support['component_part']=name.lower()
+            for dz in [-.64,.64]:
+                tie=box('Facility_'+name+'_saddle_tie',(x,y+.65,z+dz),(.12,1.08,.07),GALV,.005)
+                tie['component_part']='tank-frame'
+    for x in [TANK_LEFT+1.78*j for j in range(1,10)]:
+        for name,z in [('Fuel',.99),('Electrolyte',2.57)]:
+            seam=box('Facility_'+name+'_panel_seam',(x,y+1.073,z),(.009,.012,1.04),STEEL,.002)
+            seam['component_part']=name.lower()
     box('Row_skid_deck',(-5.34,y,.20),(23.0,2.3,.12),GALV,.012)
     for x in [-16.3,-10.6,-4.9,.8,5.7]:
         box('Row_skid_crossmember',(x,y,.105),(.18,2.3,.09),GALV)
@@ -606,6 +669,14 @@ for im in bpy.data.images:
         except RuntimeError:pass
 bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'attachments/TES_Industrial_Facility_10_Rows.blend'),compress=True)
 
+# Merge only the new storage equipment from the first native row. The ten hub
+# modules keep reusing the original four-hub web mesh plus the Hub 1 template,
+# avoiding ten separate copies of the dense ECR and fuel-cell geometries.
+facility_rows[0].location.y=0
+bpy.context.view_layer.update()
+fac_tank_col,fac_tank_unit=merge_export(FAC,[o for o in rows.objects if o.parent==facility_rows[0] and o.type in {'MESH','FONT'} and o.get('component_part') in {'fuel','electrolyte'}],'Facility_Ten_Hub_Storage')
+facility_rows[0].location.y=18
+bpy.context.view_layer.update()
 # Export the repeated unit geometry only once and reuse its mesh datablocks.
 infrastructure=[o for o in FAC.objects if o.type in ['MESH','FONT'] and not o.parent and not any(c.name=='FAC 90 - Cameras and Lighting' for c in o.users_collection)]
 fac_web_col,fac_web_meshes=merge_export(FAC,infrastructure,'Facility')
@@ -613,8 +684,9 @@ fac_web_scene=bpy.data.scenes.new('TES - Facility Web Export');fac_web_scene.col
 for i in range(10):
     row=bpy.data.objects.new('TES_Row_%02d'%(i+1),None);row['part']='rows';row['row_index']=i+1;fac_web_col.objects.link(row);row.location=(0,18-i*3.6,0)
     for src in web_unit:
-        if src.get('part') in ['shell','roof','lights']:continue
-        o=src.copy();o.data=src.data;o.parent=row;fac_web_col.objects.link(o);o['component_part']=src.get('component_part',src['part']);o['part']='rows'
+        if src.get('part') in {'shell','roof','lights','fuel','electrolyte','tank-frame'}:continue
+        o=src.copy();o.data=src.data;o.parent=row;fac_web_col.objects.link(o)
+        o['component_part']=src.get('component_part',src['part']);o['part']='rows'
         if src.get('part') in {'hub-1','hub-2','hub-3','hub-4'}:o.location.x+=HUB_SHIFT
     for number,x in EXTRA_HUBS.items():
         for src in web_unit:
@@ -622,6 +694,9 @@ for i in range(10):
             o=src.copy();o.data=src.data;o.parent=row;fac_web_col.objects.link(o)
             o['component_part']=src.get('component_part') if src.get('component_part') in {'ecr','fuel-cell'} else 'hub-'+str(number)
             o['part']='rows';o.location.x+=x-(-4.77)
+    for src in fac_tank_unit:
+        o=src.copy();o.data=src.data;o.parent=row;fac_web_col.objects.link(o)
+        o['component_part']=src.get('component_part',src['part']);o['part']='rows'
 export_scene(fac_web_scene,PUBLIC/'facility.glb')
 
 if ARGS.render:
@@ -638,16 +713,11 @@ if ARGS.render:
     FAC.render.filepath=str(OUT/'TES_Facility_Industrial.png');bpy.ops.render.render(write_still=True)
     FAC.camera=detail_camera;FAC.render.resolution_x=1600;FAC.render.resolution_y=1000
     FAC.render.filepath=str(OUT/'TES_Facility_Detail.png');bpy.ops.render.render(write_still=True)
-# Keep the native delivery focused on the editable facility. The unit master
-# and temporary web export have their own outputs and need not inflate it.
-for unused in list(bpy.data.scenes):
-    if unused != FAC:bpy.data.scenes.remove(unused)
-bpy.context.window.scene=FAC
-for _ in range(3):bpy.ops.outliner.orphans_purge(do_recursive=False)
-bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'attachments/TES_Industrial_Facility_10_Rows.blend'),compress=True)
 report={'source_sha256':hashlib.sha256((ROOT/'attachments/TES_Reference_Model.blend').read_bytes()).hexdigest(),
         'unit_objects':len(unit_objects),'unit_web_meshes':len(web_unit),'facility_rows':10,'hubs_per_row':10,
         'blender_version':bpy.app.version_string,'files':{p.name:p.stat().st_size for p in [PUBLIC/'tes-unit.glb',PUBLIC/'facility.glb',ROOT/'attachments/TES_Industrial_Unit.blend',ROOT/'attachments/TES_Industrial_Facility_10_Rows.blend']}}
 (ROOT/'scripts/blender/asset-report.json').write_text(json.dumps(report,indent=2)+'\n')
 print('ASSET_REPORT',json.dumps(report),flush=True)
-print('INDUSTRIAL_BUILD_COMPLETE',flush=True)
+# The exporter retains tens of thousands of transient objects. Replacing this
+# process releases them before compacting the saved editable facility scene.
+os.execv(sys.executable,[sys.executable,str(ROOT/'scripts/blender/finalize_facility.py')])

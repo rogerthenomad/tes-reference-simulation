@@ -7,12 +7,17 @@
   "blender_version": "5.2.2 LTS",
   "files": {
     "public/tes-unit.glb": 4858952,
-    "public/facility.glb": 11978848,
+    "public/facility.glb": 11267188,
     "attachments/TES_Industrial_Unit.blend": 1514056,
-    "attachments/TES_Industrial_Facility_10_Rows.blend": 11946884
+    "attachments/TES_Industrial_Facility_10_Rows.blend": 11991863
   },
   "uncompressed_files": {
-    "facility.glb": 56097920
+    "facility.glb": 64345996
   },
-  "compression": "Meshopt; facility simplified at 0.9 ratio with 0.001 error threshold and requantized; repeated UVs retained"
+  "storage": {
+    "facility_tanks_per_row": 2,
+    "facility_tank_length_m": 17.8,
+    "ten_hub_bays": true
+  },
+  "compression": "Meshopt; facility simplified at 0.85 ratio and 0.002 error threshold; stored tangents omitted (viewer derives tangent space); repeated UVs retained"
 }

@@ -61,7 +61,7 @@ test("facility retains ten complete rows and reuses the unit mesh data", () => {
   );
   for (const row of rows) {
     const parts = new Set(row.children.map((index) => json.nodes[index].extras?.component_part));
-    for (const part of [...Array.from({ length: 10 }, (_, index) => `hub-${index + 1}`), "battery", "ems"])
+    for (const part of [...Array.from({ length: 10 }, (_, index) => `hub-${index + 1}`), "battery", "ems", "fuel", "electrolyte"])
       assert.ok(parts.has(part));
     assert.ok(!parts.has("shell") && !parts.has("roof"), "rows are open equipment assemblies");
   }
