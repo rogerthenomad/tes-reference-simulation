@@ -33,16 +33,6 @@ function shot(pos: [number, number, number], target: [number, number, number]): 
   return { pos: new THREE.Vector3(...pos), target: new THREE.Vector3(...target) };
 }
 
-const cache = new Map<string, THREE.Group>();
-
-async function getModel(id: string) {
-  const hit = cache.get(id);
-  if (hit) return hit;
-  const built = id === "facility" ? await buildFacility() : await buildReferenceModel();
-  cache.set(id, built);
-  return built;
-}
-
 class StageBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() {
@@ -69,7 +59,7 @@ export function Stage({ stageRef }: { stageRef: Ref<StageHandle> }) {
   return (
     <StageBoundary>
       <Canvas
-        camera={{ position: [12, 6.4, 9.4], fov: 32, near: 0.08, far: 240 }}
+        camera={{ position: [12, 6.4, 9.4], fov: 32, near: 0.08, far: 400 }}
         dpr={[1, 1.6]}
         gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
         onPointerMissed={() => useTes.getState().setSelected("overview")}
@@ -94,11 +84,11 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
   const shotN = useTes((s) => s.shot);
   const setSelected = useTes((s) => s.setSelected);
 
-  const models = useRef<THREE.Group | null>(null);
+  const cache = useRef<{ unit?: THREE.Group; facility?: THREE.Group }>({});
+  const active = useRef<THREE.Group | null>(null);
   const [ready, setReady] = useState(false);
   const flying = useRef(true);
-  const shots = sceneId === "facility" ? FACILITY_SHOTS : UNIT_SHOTS;
-  const desired = useRef<Shot>(shots.iso);
+  const desired = useRef<Shot>(UNIT_SHOTS.iso);
   const controls = useThree((s) => s.controls) as {
     target: THREE.Vector3;
     update: () => void;
@@ -112,16 +102,26 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
 
   useEffect(() => {
     let dead = false;
-    const cached = cache.get(sceneId);
+    const key = sceneId === "facility" ? "facility" : "unit";
+    const cached = cache.current[key];
     if (cached) {
-      models.current = cached;
+      if (active.current && active.current !== cached) active.current.visible = false;
+      cached.visible = true;
+      active.current = cached;
       setReady(true);
       return;
     }
     setReady(false);
-    getModel(sceneId).then((group) => {
-      if (dead) return;
-      models.current = group;
+    const load = sceneId === "facility" ? buildFacility() : buildReferenceModel();
+    load.then((group) => {
+      if (dead) {
+        disposeObject(group);
+        return;
+      }
+      cache.current[key] = group;
+      if (active.current && active.current !== group) active.current.visible = false;
+      group.visible = true;
+      active.current = group;
       setReady(true);
     });
     return () => {
@@ -130,9 +130,18 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
   }, [sceneId]);
 
   useEffect(() => {
+    return () => {
+      if (cache.current.unit) disposeObject(cache.current.unit);
+      if (cache.current.facility) disposeObject(cache.current.facility);
+      cache.current = {};
+      active.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
     flying.current = true;
-    const active = sceneId === "facility" ? FACILITY_SHOTS : UNIT_SHOTS;
-    desired.current = active[view] || active.iso;
+    const shots = sceneId === "facility" ? FACILITY_SHOTS : UNIT_SHOTS;
+    desired.current = shots[view] || shots.iso;
   }, [view, shotN, sceneId]);
 
   useEffect(() => {
@@ -146,7 +155,7 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
       pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(pointer, camera);
-      const hits = models.current ? raycaster.intersectObject(models.current, true) : [];
+      const hits = active.current ? raycaster.intersectObject(active.current, true) : [];
       const onModel = hits.length > 0;
       controls.screenSpacePanning = true;
       controls.mouseButtons.LEFT = onModel ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN;
@@ -178,7 +187,7 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
 
   useFrame(({ clock }, delta) => {
     if (controls) controls.autoRotate = spin && !flying.current;
-    const pack = models.current;
+    const pack = active.current;
     if (pack) {
       applyPresentation(pack, { shell, isolate, flow, explode, selected, engineering, pulse: clock.elapsedTime });
     }
@@ -207,7 +216,9 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
     }
   };
 
-  const ground = sceneId === "facility" ? 60 : 22;
+  const isFacility = sceneId === "facility";
+  const ground = isFacility ? 60 : 22;
+
   return (
     <>
       <color attach="background" args={["#9eb0c0"]} />
@@ -216,7 +227,8 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
       <directionalLight position={[-8, 14, 8]} intensity={quality === "high" ? 2.4 : 1.6} castShadow={quality === "high"} />
       <directionalLight position={[6, 6, -8]} intensity={0.45} color="#ffd7bf" />
       <Environment files="/hdri/warehouse.hdr" environmentIntensity={quality === "high" ? 1.15 : 0.75} background={false} />
-      {ready && models.current ? <primitive object={models.current} onClick={pick} /> : null}
+      {ready && cache.current.unit ? <primitive object={cache.current.unit} onClick={pick} visible={sceneId === "unit"} /> : null}
+      {ready && cache.current.facility ? <primitive object={cache.current.facility} onClick={pick} visible={sceneId === "facility"} /> : null}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
         <circleGeometry args={[ground, 64]} />
         <meshStandardMaterial color="#c5ced6" roughness={0.92} metalness={0.04} />
@@ -224,7 +236,7 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
       {quality === "high" ? (
         <ContactShadows position={[0, 0, 0]} opacity={0.35} scale={ground * 1.4} blur={2.4} far={8} />
       ) : null}
-      <OrbitControls makeDefault enableDamping dampingFactor={0.08} screenSpacePanning maxPolarAngle={Math.PI / 2.05} minDistance={1.2} maxDistance={sceneId === "facility" ? 120 : 80} />
+      <OrbitControls makeDefault enableDamping dampingFactor={0.08} screenSpacePanning maxPolarAngle={Math.PI / 2.05} minDistance={1.2} maxDistance={isFacility ? 120 : 80} />
     </>
   );
 }
