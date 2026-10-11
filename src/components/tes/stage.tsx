@@ -14,6 +14,7 @@ import { PARTS, type PartId } from "@/lib/tes/content";
 import { useTes } from "@/lib/tes/store";
 import { applyPresentation, buildReferenceModel, disposeObject } from "@/components/tes/geometry";
 import { buildFacility } from "@/components/tes/facility";
+import { FlowPaths } from "@/components/tes/flow-paths";
 
 export type StageHandle = { nudge: (dir: "left" | "right" | "up" | "down") => void };
 
@@ -29,11 +30,11 @@ const UNIT_SHOTS: Record<string, Shot> = {
 };
 
 const FACILITY_SHOTS: Record<string, Shot> = {
-  front: shot([2, 9, 80], [2, 2, 0]),
-  back: shot([2, 9, -80], [2, 2, 0]),
-  iso: shot([65, 42, 58], [2, 2, 0]),
-  top: shot([2, 100, 0.5], [2, 0, 0]),
-  end: shot([100, 15, 0], [2, 2, 0]),
+  front: shot([2, 12, 55], [2, 2, 0]),
+  back: shot([2, 12, -55], [2, 2, 0]),
+  iso: shot([42, 28, 42], [2, 2, 0]),
+  top: shot([2, 70, 0.5], [2, 0, 0]),
+  end: shot([72, 15, 0], [2, 2, 0]),
   utility: shot([18, 4, 8], [16, 1.5, 0]),
 };
 
@@ -78,7 +79,7 @@ export function Stage({ stageRef }: { stageRef: Ref<StageHandle> }) {
         gl={{
           antialias: true,
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.05,
+          toneMappingExposure: 0.88,
         }}
         onPointerMissed={() => useTes.getState().setSelected("overview")}
       >
@@ -97,6 +98,7 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
   const explode = useTes((s) => s.explode);
   const selected = useTes((s) => s.selected);
   const spin = useTes((s) => s.spin);
+  const running = useTes((s) => s.running);
   const quality = useTes((s) => s.quality);
   const engineering = useTes((s) => s.audience) === "engineering";
   const shotN = useTes((s) => s.shot);
@@ -256,7 +258,7 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
   );
 
   useFrame(({ clock }, delta) => {
-    if (spin || flow !== "off") invalidate();
+    if (spin || (flow !== "off" && running)) invalidate();
     if (controls) controls.autoRotate = spin && !flying.current;
     const pack = active.current;
     if (pack) {
@@ -267,7 +269,7 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
         explode,
         selected,
         engineering,
-        pulse: clock.elapsedTime,
+        pulse: running ? clock.elapsedTime : 0,
       });
     }
     if (!controls || !flying.current || spin) return;
@@ -308,12 +310,12 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
 
   return (
     <>
-      <color attach="background" args={["#9eb0c0"]} />
-      <hemisphereLight args={["#d5e4f2", "#6a5848", 0.55]} />
-      <ambientLight intensity={0.25} />
+      <color attach="background" args={["#889098"]} />
+      <hemisphereLight args={["#d5e4f2", "#6a5848", 0.38]} />
+      <ambientLight intensity={0.16} />
       <directionalLight
         position={[-8, 14, 8]}
-        intensity={quality === "high" ? 2.1 : 1.6}
+        intensity={quality === "high" ? 1.55 : 1.25}
         castShadow={quality === "high"}
         shadow-mapSize={[2048, 2048]}
         shadow-camera-left={isFacility ? -34 : -10}
@@ -326,8 +328,9 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
       <directionalLight position={[6, 6, -8]} intensity={0.45} color="#ffd7bf" />
       <Environment
         files="/hdri/warehouse.hdr"
-        environmentIntensity={quality === "high" ? 1.15 : 0.75}
-        background={false}
+        environmentIntensity={quality === "high" ? 1.25 : 0.9}
+        background
+        backgroundBlurriness={0.06}
       />
       {ready && cache.current.unit ? (
         <primitive object={cache.current.unit} onClick={pick} visible={sceneId === "unit"} />
@@ -339,6 +342,7 @@ function SceneInner({ stageRef }: { stageRef: Ref<StageHandle> }) {
           visible={sceneId === "facility"}
         />
       ) : null}
+      {ready && flow !== "off" ? <FlowPaths scene={sceneId} flow={flow} running={running} /> : null}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
         <circleGeometry args={[ground, 64]} />
         <meshStandardMaterial color="#c5ced6" roughness={0.92} metalness={0.04} />

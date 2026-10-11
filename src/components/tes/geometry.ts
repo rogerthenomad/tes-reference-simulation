@@ -193,11 +193,11 @@ export function applyPresentation(root: THREE.Object3D, state: Presentation) {
       material.color.copy(base.color);
       material.emissive.copy(base.emissive);
       material.emissiveIntensity = base.intensity;
-      if (flow !== "off" && !hit) material.color.multiplyScalar(0.35);
-      if (hit) {
-        material.color.lerp(FLOW_COLORS[flow], 0.4);
+      if (flow !== "off" && !hit) material.color.multiplyScalar(0.86);
+      if (hit && materialFlow(material.name) === flow) {
+        material.color.lerp(FLOW_COLORS[flow], 0.12);
         material.emissive.copy(FLOW_COLORS[flow]);
-        material.emissiveIntensity = 0.4 + 0.22 * (1 + Math.sin(state.pulse * 4));
+        material.emissiveIntensity = 0.14 + 0.06 * (1 + Math.sin(state.pulse * 4));
       } else if (selected) {
         material.emissive.copy(SELECTED);
         material.emissiveIntensity = 0.28;

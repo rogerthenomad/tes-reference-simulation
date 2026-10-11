@@ -55,7 +55,7 @@ export const useTes = create<TesState>((set) => ({
     set({
       scene,
       selected: "overview",
-      view: "front",
+      view: "iso",
       explode: 0,
       shell: scene === "facility" ? "closed" : "open",
       shot: Date.now(),
@@ -63,11 +63,18 @@ export const useTes = create<TesState>((set) => ({
   setView: (view) => set((s) => ({ view, shot: s.shot + 1 })),
   setShell: (shell) => set({ shell }),
   setIsolate: (isolate) => set({ isolate }),
-  setFlow: (flow) => set({ flow }),
+  setFlow: (flow) => set((s) => ({
+    flow,
+    shell: flow !== "off" && s.scene === "facility" ? "open" : s.shell,
+  })),
   setAudience: (audience) => set({ audience }),
   setExplode: (explode) => set({ explode }),
   setSpin: (spin) => set({ spin }),
-  setRunning: (running) => set({ running }),
+  setRunning: (running) => set((s) => ({
+    running,
+    flow: running && s.flow === "off" ? "power" : s.flow,
+    shell: running && s.scene === "facility" ? "open" : s.shell,
+  })),
   setSelected: (selected) =>
     set((s) => {
       const flow = PART_FLOW[selected];

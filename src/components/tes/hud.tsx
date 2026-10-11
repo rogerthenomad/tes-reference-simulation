@@ -221,7 +221,7 @@ export function Hud({ stageRef, children }: { stageRef: React.RefObject<StageHan
           </button>
           <button type="button" aria-pressed={running} className={running ? "chip on" : "chip"} onClick={() => setRunning(!running)}>
             {running ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
-            {running ? "Running" : "Run"}
+            {running ? "Pause flow" : "Play flow"}
           </button>
           <button
             type="button"
